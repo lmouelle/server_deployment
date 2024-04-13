@@ -35,4 +35,10 @@ setsebool -P domain_kernel_load_modules=true
 # /etc/containers/systemd/users/$(UID)
 # /etc/containers/systemd/users/
 # and /etc/containers/systemd for root containers
+# TODO: Can I use something like gnu stow for symlink management here?
 ln -s /data/deployment/quadlets/ /etc/containers/systemd -T
+
+# Need to do this so everything works? Unsure how to propogate podman secrets
+# TODO: Eventually bootstrap secrets with bitwarden sync
+cat /data/deployment/container_configs/restic/.restic_passwd | podman secret create restic-repo-password -
+cat /data/deployment/container_configs/restic/.aws_secret_access_key | podman secret create aws-secret-access-key -
