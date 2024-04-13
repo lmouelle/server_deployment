@@ -30,8 +30,10 @@ for container_name in (ls */*.container | cut -f1 -d/); do
     # the container to exec scripts, just run restic
 done
 
-# TODO: Add media servers like Calibre and Jellyfin here
+# TODO: Add media servers like Calibre and Jellyfin here, and *arr apps.
 # Can I write some manifest in each app/service/container and have it say what host permissions it needs?
+# May create 'videos', 'comics' groups for different container/users to access stuff like /data/videos
+groupadd torrents -f -r -U deluge restic
 chown -R deluge:deluge /data/torrents 
 
 # Need to do this so everything works? Unsure how to propogate podman secrets
