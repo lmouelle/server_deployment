@@ -1,3 +1,4 @@
 podman_configs/**
+container_configs/**
 oom
 .vscode/

@@ -5,7 +5,7 @@ Description=Container for VPN proxy
 Image=docker.io/qmcgaw/gluetun:v3.38
 AddCapability=NET_ADMIN
 AddDevice=/dev/net/tun
-Volume=/data/deployment/podman_configs/gluetun:/gluetun:Z
+Volume=/data/deployment/container_configs/gluetun:/gluetun:Z
 Environment=VPN_SERVICE_PROVIDER=custom VPN_TYPE=wireguard VPN_PORT_FORWARDING=on VPN_PORT_FORWARDING_PROVIDER=protonvpn
 # 8112 is deluge web UI
 PublishPort=8112:8112 
@@ -20,7 +20,5 @@ Restart=always
 TimeoutStartSec=180
 
 [Install]
-# quadlets turns deluge.container into systemd-deluge.container
-# unless I specify otherwise in deluge.container config.
 WantedBy=deluge.service
 WantedBy=default.target
