@@ -17,24 +17,21 @@ setsebool -P domain_kernel_load_modules=true
 
 # Any kind of host NFS/Samba share setup here as well
 
-for container_name in (ls */*.container | cut -f1 -d/); do
-    useradd -rU $container_name -s /sbin/nologin -M -d ./$container_name/
+for container_name in (ls */.config/containers/systemd*.container | cut -f1 -d/); do
+    useradd -rU $container_name -s /usr/sbin/nologin -m
     usermod luouelle -aG $container_name
+    mkdir -p /home/$container_name/.config/containers
+    ln -s $container_name/.config/containers/systemd/ /home/$container_name/.config/containers/
     # reloading every time is inefficient but we want systemctl enable to see the current file
     systemctl daemon-reload
     systemctl enable --now $container_name --user $container_name
-
-    # TODO: Create timer for restic, and volume/image defs in each service
-    # TODO: Have not 1 restic script that runs backup/check/prune/check but 4
-    # systemd units, each going to the next only on success. This way I do not need
-    # the container to exec scripts, just run restic
 done
 
 # TODO: Add media servers like Calibre and Jellyfin here, and *arr apps.
 # Can I write some manifest in each app/service/container and have it say what host permissions it needs?
 # May create 'videos', 'comics' groups for different container/users to access stuff like /data/videos
 groupadd torrents -f -r -U deluge restic
-chown -R deluge:deluge /data/torrents 
+chown -R deluge:torrents /data/torrents 
 
 # Need to do this so everything works? Unsure how to propogate podman secrets
 # TODO: Eventually bootstrap secrets with bitwarden sync
