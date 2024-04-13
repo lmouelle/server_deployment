@@ -23,8 +23,8 @@ for container_name in (ls */.config/containers/systemd*.container | cut -f1 -d/)
     mkdir -p /home/$container_name/.config/containers
     ln -s $container_name/.config/containers/systemd/ /home/$container_name/.config/containers/
     # reloading every time is inefficient but we want systemctl enable to see the current file
-    systemctl daemon-reload
-    systemctl enable --now $container_name --user $container_name
+    systemctl daemon-reload --user
+    systemctl enable $container_name --user --now
 done
 
 # TODO: Add media servers like Calibre and Jellyfin here, and *arr apps.
