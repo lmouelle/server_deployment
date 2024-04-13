@@ -3,7 +3,7 @@ Description=Container for deluge daemon, web UI, GTK UI server
 
 [Container]
 Image=docker.io/linuxserver/deluge:2.1.1
-Volume=/data/deployment/container_configs/deluge/:/config:Z
+Volume=~/conf:/config:Z
 Volume=/data/torrents/:/downloads:z
 Environment=PUID=1000 PGID=1000 TZ=America/Los_Angeles DELUGE_LOGLEVEL=info
 # quadlets generates systemd-gluetun container name from gluetun.container
