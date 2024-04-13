@@ -36,9 +36,32 @@ setsebool -P domain_kernel_load_modules=true
 # /etc/containers/systemd/users/
 # and /etc/containers/systemd for root containers
 # TODO: Can I use something like gnu stow for symlink management here?
-ln -s /data/deployment/quadlets/ /etc/containers/systemd -T
+
+
+# Symlink the quadlet files to the UID of each new user
+# ... Or root user can start containers, but the containers run as nonroot?
+
+for container_name in (ls */*.container | cut -f1 -d/); do
+    useradd -rmU $container_name -s /sbin/nologin
+    usermod luouelle -aG $container_name
+    # TODO: Consider replacing this with gnu stow
+    mkdir -p /home/$container_name/.config/containers/systemd/
+    ln -s $container_name/$container_name.container /home/$container_name/.config/containers/systemd/
+    # reloading every time is inefficient but we want systemctl enable to see the current file
+    systemctl daemon-reload
+    systemctl enable --now /home/$container_name/.config/containers/systemd/$container_name.container --user $container_name
+
+    # TODO: systemctl enable the user defined podman service file
+    # TODO: Create timer for restic, and volume/image defs in each
+    # TODO: Have not 1 restic script that runs backup/check/prune/check but 4
+    # systemd units, each going to the next only on success. This way I do not need
+    # the container to exec scripts, just run restic
+done
+
+# TODO: Add media servers like Calibre and Jellyfin here
+chown -R deluge:deluge /data/torrents 
 
 # Need to do this so everything works? Unsure how to propogate podman secrets
 # TODO: Eventually bootstrap secrets with bitwarden sync
-cat /data/deployment/container_configs/restic/.restic_passwd | podman secret create restic-repo-password -
-cat /data/deployment/container_configs/restic/.aws_secret_access_key | podman secret create aws-secret-access-key -
+# cat /data/deployment/container_configs/restic/.restic_passwd | podman secret create restic-repo-password -
+# cat /data/deployment/container_configs/restic/.aws_secret_access_key | podman secret create aws-secret-access-key -
