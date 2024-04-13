@@ -1,0 +1,9 @@
+[Unit]
+Description=Run backup daily, defined by luouelle
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

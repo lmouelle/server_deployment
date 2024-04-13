@@ -1,0 +1,16 @@
+[Unit]
+Description=Container for NAS backup script, prune function
+After=check@backup
+Before=check@prune
+
+[Container]
+Image=docker.io/restic/restic:0.16.4
+Secret=restic-repo-password,type=env,target=RESTIC_PASSWORD
+Secret=aws-secret-access-key,type=env,target=AWS_SECRET_ACCESS_KEY
+Environment=RESTIC_REPOSITORY=s3:https://s3.us-west-1.wasabisys.com/luouelle-media
+Environment=AWS_ACCESS_KEY_ID=HTNNDIVL6MTN0M89B9WN
+Exec='restic forget --keep-daily 7 --prune'
+
+[Service]
+TimeoutStartSec=180
+Type=oneshot

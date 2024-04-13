@@ -1,26 +1,17 @@
 [Unit]
-Description=Container for NAS backup script
+Description=Container for NAS backup script, check after %i function
 
 [Container]
 Image=docker.io/restic/restic:0.16.4
-HostName=nas
 # TODO: Will giving restic a mount of the full data dir cause issues?
-Volume=/data:/data:ro,z
 # TODO: Can I create some systemd .target, have restic take a dependency on it,
-# and that target generates this secrets with podman? Maybe need bitwarden CLI setup
+# and that target generates these secrets with podman? Maybe need bitwarden CLI setup
 Secret=restic-repo-password,type=env,target=RESTIC_PASSWORD
 Secret=aws-secret-access-key,type=env,target=AWS_SECRET_ACCESS_KEY
 Environment=RESTIC_REPOSITORY=s3:https://s3.us-west-1.wasabisys.com/luouelle-media
 Environment=AWS_ACCESS_KEY_ID=HTNNDIVL6MTN0M89B9WN
-# TODO: Switch to backup, prune, check and exit once confirmed this works
-Exec='restic stats'
+Exec='check'
 
 [Service]
-# TODO: Reduce timeout here, everywhere actually, by predownloading
-# podman images. I think there are 'foo.image' files in quadlets that'll do?
 TimeoutStartSec=180
 Type=oneshot
-RemainAfterExit=yes
-
-[Install]
-WantedBy=default.target
