@@ -30,3 +30,11 @@ setsebool -P domain_kernel_load_modules=true
 # Real issue is how to pass secrets files to the container?
 # https://www.redhat.com/sysadmin/podman-kubernetes-secrets this is a promising answer?
 # Requires host setup script though. Ugh
+# Spent a lot of time looking at this, podman-compose still cannot set secrets as environment vars
+# All secrets are mounted on /run/secrets/$NAME as files. I do not see how to set AWS env vars easily from within podman compose...
+# Maybe just make a wrapper script??
+# https://github.com/containers/podman-compose/pull/856
+
+
+# Make sure that hostname is always 'nas' or podman compose will fail on restic, which
+# wants hostname specified
