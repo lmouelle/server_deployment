@@ -16,4 +16,3 @@ TimeoutStartSec=180
 
 [Install]
 WantedBy=default.target
-Wants=gluetun.service
