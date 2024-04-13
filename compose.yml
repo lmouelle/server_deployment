@@ -30,7 +30,7 @@ services:
           memory: 256M
 
   deluge:
-    image: docker.io/linuxserver/deluge:latest # TODO: Switch to specific version tag, for some reason it failed to find manifest when i tried?
+    image: docker.io/linuxserver/deluge:2.1.1
     container_name: deluge
     restart: unless-stopped
     environment:
