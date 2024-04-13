@@ -1,4 +1,19 @@
 version: "3"
+
+secrets:
+  # TODO: Clean these up some, move into some secrets manager for long term storage?
+  # Maybe just use bitwarden CLI and pull, then write to file on host setup?
+  # Encrypt at rest? And how to integrate with podman secret command?
+  # Blocker: Podman compose cannot create env vars in container, it only mounts
+  # secrets as files under /run/secrets/$NAME. leaving this here
+  # TODO: Replace all full paths with relative so /data/deployment prefix is gone
+  restic-password:
+    file: /data/deployment/podman_configs/restic/.restic_passwd
+  wasabi-access-key-id: # Unused until podman compose can write env vars into container
+    file: /data/deployment/podman_configs/restic/.aws_access_key_id
+  wasabi-secret-access-key: # Unused until podman compose can write env vars into container
+    file: /data/deployment/podman_configs/restic/.aws_secret_access_key
+
 services:
   gluetun:
     image: docker.io/qmcgaw/gluetun:v3.38
@@ -40,7 +55,7 @@ services:
       - DELUGE_LOGLEVEL=info
     volumes:
       - /data/deployment/podman_configs/deluge/:/config:Z
-      - /data/torrents/:/downloads:Z # Note that the container expects a '/downloads' directory, mount as '/torrents' and things silently fail
+      - /data/torrents/:/downloads:z # Note that the container expects a '/downloads' directory, mount as '/torrents' and things silently fail
     depends_on:
     - gluetun
     network_mode: "container:gluetun"
@@ -48,3 +63,20 @@ services:
       resources:
         limits:
           memory: 2G
+
+  restic-backup:
+    image: docker.io/restic/restic:0.16.4
+    container_name: restic
+    hostname: nas # Used by restic to see if machines changed, if this is unspecified it reuploads everything
+    # TODO: Use restic exclude flag on backup command to omit the deployment dir, only upload media data
+    command: 'backup -vvv /data --exclude /data/deployment --password-file /run/secrets/restic-password'
+    volumes:
+      # right now backup up everything. 
+      # But should I do something unique for deluge state backups like state/session files?
+      # When I setup nextcloud I'd need to script a DB dump as well
+      # Also this does grab stuff in podman_configs... Fine for testing
+      # Will I have issues it different containers accessing the files??
+      - /data:/data:ro,z
+    secrets:
+      - restic-password
+    env_file: /data/deployment/podman_configs/restic/.env
