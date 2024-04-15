@@ -7,7 +7,7 @@ datadir=$datadir
 
 # Host DNF packages. We assume git is already installed else this script
 # would not be on the host, but for completeness I include it here
-dnf install podman fish git stow # ansible (will I ever move to ansible?)
+dnf install podman fish git stow -y # ansible (will I ever move to ansible?)
 
 # These two are needed by gluetun container, the former
 # to access the /dev/net/tun device and the latter so the container
@@ -55,7 +55,7 @@ semanage fcontext $datadir -a -t container_file_t
 # I believe so, test this. Do i need to run su with -l to simulate user login?
 for container_name in (ls */.config/containers/systemd*.container | cut -f1 -d/); do
     su $container_name -c 'systemctl daemon-reload --user' -l
-    su $container_name -c 'systemctl enable $container_name --user --now' -l
+    su $container_name -c "systemctl enable $container_name --user --now" -l
 done
 
 # Need to do this so everything works? Unsure how to propogate podman secrets
