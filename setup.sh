@@ -49,6 +49,7 @@ chown -Rc --preserve-root $me:torrents $datadir/torrents
 chmod -Rc --preserve-root 0760
 
 semanage fcontext $datadir -a -t container_file_t 
+restorecon -vR /data -T 0
 
 # TODO: Does the section below need to run as the container account?
 # I believe so, test this. Do i need to run su with -l to simulate user login?
