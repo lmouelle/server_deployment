@@ -35,7 +35,6 @@ for container_name in (ls */.config/* | cut -f1 -d/); do
     stow --target=/home/$container_name --stow --dotfiles $container_name
 done
 
-# Intentionally nonrecursive here.
 groupadd data -f -r -U restic $me
 chown -Rc --preserve-root $me:data $datadir
 chmod -Rc --preserve-root 0760
