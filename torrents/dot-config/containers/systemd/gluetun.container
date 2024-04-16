@@ -5,7 +5,7 @@ Description=Container for VPN proxy
 Image=docker.io/qmcgaw/gluetun:v3.38
 AddCapability=NET_ADMIN
 AddDevice=/dev/net/tun
-Volume=~/state:/gluetun:Z
+Volume=~/gluetun_state:/gluetun:Z
 # TODO: Currently uses the wg0.conf file, can I get rid of it and use podman secrets?
 # Trivial to download again from proton but handling the private key like this feels wrong...
 Environment=VPN_SERVICE_PROVIDER=custom VPN_TYPE=wireguard VPN_PORT_FORWARDING=on VPN_PORT_FORWARDING_PROVIDER=protonvpn
