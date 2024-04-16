@@ -3,7 +3,7 @@
 # Maybe use gnu stow + a makefile
 
 me=luouelle
-datadir=$datadir
+datadir=/data
 
 # Host DNF packages. We assume git is already installed else this script
 # would not be on the host, but for completeness I include it here
@@ -25,17 +25,17 @@ setsebool -P domain_kernel_load_modules=true
 
 # Any kind of host NFS/Samba share setup here as well
 
-for container_name in (ls */dot-config/* -d | cut -f1 -d/); do
-    useradd -mrU $container_name
-    usermod $me -aG $container_name
-    loginctl enable-linger $container_name
+for package in (ls */dot-config/* -d | cut -f1 -d/); do
+    useradd -mrU $package
+    usermod $me -aG $package
+    loginctl enable-linger $package
     # TODO: Any SELinux file specific context to set here?
-    chown -Rc $me:$container_name $container_name/ --preserve-root
-    chmod 0760 -Rc --preserve-root $container_name/
+    chown -Rc $me:$package $package/ --preserve-root
+    chmod 0760 -Rc --preserve-root $package/
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
-    stow --target=/home/$container_name --stow --dotfiles $container_name
-    chown -Rch $container_name:$container_name /home/$container_name --preserve-root
+    stow --target=/home/$package/ --stow --dotfiles $package/
+    chown -Rch $package:$package /home/$package/ --preserve-root
 done
 
 groupadd data -f -r -U restic $me
@@ -47,18 +47,17 @@ chmod -Rc --preserve-root 0760
 # Can I write some manifest in each app/service/container and have it say what host permissions it needs?
 # May create 'videos', 'comics' groups for different container/users to access stuff like $datadir/videos
 # Feels like I'm recreating Ansible badly here...
-groupadd torrents -f -r -U deluge restic $me
-chown -Rc --preserve-root $me:torrents $datadir/torrents 
+usermod restic -aG torrents
+chown -Rc --preserve-root $me:torrents $datadir/torrents/
 chmod -Rc --preserve-root 0760
 
 semanage fcontext $datadir -a -t container_file_t 
 restorecon -vR /data -T 0
 
-# TODO: Does the section below need to run as the container account?
-# I believe so, test this. Do i need to run su with -l to simulate user login?
-for container_name in (ls */dot-config/* | cut -f1 -d/); do
-    # su $container_name -c 'systemctl daemon-reload --user' -l
-    su $container_name -c "systemctl enable $container_name --user --now" -l
+# Now enable/start the systemd services I symlinked with stow, as the new user accounts
+for package in (ls */dot-config/* | cut -f1 -d/); do
+    # su $package -c 'systemctl daemon-reload --user' -l
+    # systemd-run --no-ask-password --uid=$package -E XDG_RUNTIME_DIR=/run/user/$(id -u $package) -t --wait --pipe systemctl enable ~/.config/containers/systemd/ --now --user
 done
 
 # Need to do this so everything works? Unsure how to propogate podman secrets
