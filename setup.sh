@@ -30,7 +30,7 @@ setsebool -P domain_kernel_load_modules=true
 # Any kind of host NFS/Samba share setup here as well
 
 for package in (ls */dot-config/* -d | cut -f1 -d/); do
-    useradd -mrU $package -G $common_user_name
+    useradd -mrU $package -G $(id -g)
     usermod $me -aG $package
     loginctl enable-linger $package
     # TODO: Any SELinux file specific context to set here?
