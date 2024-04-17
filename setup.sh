@@ -2,7 +2,11 @@
 # Eventually move this into a proper Ansible config, a script is fine for now though.
 # Maybe use gnu stow + a makefile
 
-me=luouelle
+# This script should be run as a 'deployment' or 'package' user,
+# who has all this config files in their ~/ dir.
+# We set deployment user's ~/ with 750 permissions, add all new system users to deployment user group
+# Them stow/symlink to deploy user's ~/deployment_files/$package dir to each service's home dir
+
 datadir=/data
 
 # Host DNF packages. We assume git is already installed else this script
@@ -26,21 +30,21 @@ setsebool -P domain_kernel_load_modules=true
 # Any kind of host NFS/Samba share setup here as well
 
 for package in (ls */dot-config/* -d | cut -f1 -d/); do
-    useradd -mrU $package
+    useradd -mrU $package -G $common_user_name
     usermod $me -aG $package
     loginctl enable-linger $package
     # TODO: Any SELinux file specific context to set here?
     chown -Rc $me:$package $package/ --preserve-root
-    chmod 0760 -Rc --preserve-root $package/
+    chmod 0750 -Rc --preserve-root $package/
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
     stow --target=/home/$package/ --stow --dotfiles $package/
     chown -Rch $package:$package /home/$package/ --preserve-root
-done
+done    
 
 groupadd data -f -r -U restic $me
 chown -Rc --preserve-root $me:data $datadir
-chmod -Rc --preserve-root 0760
+chmod -Rc --preserve-root 0750 $datadir
 
 # Overwrite perms set above for $datadir/{comics,videos}
 # TODO: Add media servers like Calibre and Jellyfin here, and *arr apps.
