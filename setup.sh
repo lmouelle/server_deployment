@@ -2,10 +2,13 @@
 # Eventually move this into a proper Ansible config, a script is fine for now though.
 # Maybe use gnu stow + a makefile
 
-# This script should be run as a 'deployment' or 'package' user,
-# who has all this config files in their ~/ dir.
+# This script should be run as sudo, from the deployment user
 # We set deployment user's ~/ with 750 permissions, add all new system users to deployment user group
 # Them stow/symlink to deploy user's ~/deployment_files/$package dir to each service's home dir
+common_user=deployment
+useradd -mrU $common_user
+common_user_home=$(userdbctl user $common_user --output=classic | cut -f6 -d:)
+chmod 750 $common_user_home
 
 datadir=/data
 
@@ -30,11 +33,11 @@ setsebool -P domain_kernel_load_modules=true
 # Any kind of host NFS/Samba share setup here as well
 
 for package in (ls */dot-config/* -d | cut -f1 -d/); do
-    useradd -mrU $package -G $(id -g)
-    usermod $me -aG $package
+    common_user_group=$(userdbctl user $common_user --output=clasic | cut -f5 -d:)
+    useradd -mrU $package -G $common_user_group -s /usr/bin/nologin
     loginctl enable-linger $package
     # TODO: Any SELinux file specific context to set here?
-    chown -Rc $me:$package $package/ --preserve-root
+    chown -Rc :$package $package/ --preserve-root
     chmod 0750 -Rc --preserve-root $package/
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
@@ -42,9 +45,9 @@ for package in (ls */dot-config/* -d | cut -f1 -d/); do
     chown -Rch $package:$package /home/$package/ --preserve-root
 done    
 
-groupadd data -f -r -U restic $me
-chown -Rc --preserve-root $me:data $datadir
-chmod -Rc --preserve-root 0750 $datadir
+groupadd data -f -r -U restic
+chown -Rc --preserve-root :data $datadir/
+chmod -Rc --preserve-root 750 $datadir/
 
 # Overwrite perms set above for $datadir/{comics,videos}
 # TODO: Add media servers like Calibre and Jellyfin here, and *arr apps.
@@ -52,8 +55,8 @@ chmod -Rc --preserve-root 0750 $datadir
 # May create 'videos', 'comics' groups for different container/users to access stuff like $datadir/videos
 # Feels like I'm recreating Ansible badly here...
 usermod restic -aG torrents
-chown -Rc --preserve-root $me:torrents $datadir/torrents/
-chmod -Rc --preserve-root 0760
+chown -Rc --preserve-root :torrents $datadir/torrents/
+chmod -Rc --preserve-root 750
 
 semanage fcontext $datadir -a -t container_file_t 
 restorecon -vR /data -T 0

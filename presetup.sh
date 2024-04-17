@@ -8,7 +8,4 @@
 # Setup a common user/home dir for deployment. Then later I can stow/symlink
 # from pod/service dirs to deployment user dir by giving everyone in the 'deployment'
 # group perms to that (e.g. link from /home/torrents/config to /home/deployment/torrents/dot-config)
-common_user='deployment'
-useradd -mrU $common_user
-user_home=$(userdbctl user $common_user --output=classic | cut -f6 -d:)
-chmod 750 $user_home
+
