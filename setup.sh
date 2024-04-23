@@ -1,20 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
 # Any random host setup required, like SELinux permissions
 # Eventually move this into a proper Ansible config, a script is fine for now though.
 # Maybe use gnu stow + a makefile
 
+# One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
+# Find disks and create volumes/etc and mount based on UUID?
+
 # This script should be run as sudo, from the deployment user
 # We set deployment user's ~/ with 750 permissions, add all new system users to deployment user group
 # Them stow/symlink to deploy user's ~/deployment_files/$package dir to each service's home dir
-common_user=deployment
-useradd -mrU $common_user
-common_user_home=$(userdbctl user $common_user --output=classic | cut -f6 -d:)
-chmod 750 $common_user_home
-
-datadir=/data
+common_user=$(cat deployment_user_name.txt)
+datadir=$(cat datadir_name.txt)
 
 # Host DNF packages. We assume git is already installed else this script
 # would not be on the host, but for completeness I include it here
-dnf install podman fish git stow -y # ansible (will I ever move to ansible?)
+dnf install podman fish git stow -y &> /dev/null # ansible (will I ever move to ansible?)
+
+if ! userdbctl user $common_user &> /dev/null
+then
+    # move deployment user setup to the presetup script
+    # useradd -mrU $common_user
+    exit 1
+fi
+
+common_user_home=$(userdbctl user $common_user --output=classic | cut -f6 -d:)
+chmod 750 $common_user_home
 
 # These two are needed by gluetun container, the former
 # to access the /dev/net/tun device and the latter so the container
@@ -32,18 +45,23 @@ setsebool -P domain_kernel_load_modules=true
 
 # Any kind of host NFS/Samba share setup here as well
 
-for package in (ls */dot-config/* -d | cut -f1 -d/); do
-    common_user_group=$(userdbctl user $common_user --output=clasic | cut -f5 -d:)
-    useradd -mrU $package -G $common_user_group -s /usr/bin/nologin
+for package in $(ls */dot-config/* -d | cut -f1 -d/); do
+    common_user_group=$(userdbctl user $common_user --output=classic | cut -f5 -d:)
+    if ! userdbctl user $package &> /dev/null
+    then
+        useradd -mrU $package -G $common_user_group -s /usr/bin/nologin
+    fi
+
     loginctl enable-linger $package
     # TODO: Any SELinux file specific context to set here?
     chown -Rc :$package $package/ --preserve-root
-    chmod 0750 -Rc --preserve-root $package/
+    chmod 750 -Rc --preserve-root $package/
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
-    stow --target=/home/$package/ --stow --dotfiles $package/
-    chown -Rch $package:$package /home/$package/ --preserve-root
-done    
+    target_dir=$(userdbctl user $package --output=classic | cut -f5 -d:)
+    stow --target=$target_dir --stow --dotfiles $package/
+    chown -Rch $package:$package $target_dir --preserve-root
+done
 
 groupadd data -f -r -U restic
 chown -Rc --preserve-root :data $datadir/
@@ -54,9 +72,15 @@ chmod -Rc --preserve-root 750 $datadir/
 # Can I write some manifest in each app/service/container and have it say what host permissions it needs?
 # May create 'videos', 'comics' groups for different container/users to access stuff like $datadir/videos
 # Feels like I'm recreating Ansible badly here...
-usermod restic -aG torrents
-chown -Rc --preserve-root :torrents $datadir/torrents/
-chmod -Rc --preserve-root 750
+if userdbctl user restic 2>&1 /dev/null
+then
+    usermod restic -aG torrents
+fi    
+
+if userdbctl group torrents 2>&1 /dev/null
+then 
+    chown -Rc --preserve-root :torrents $datadir/torrents/
+fi    
 
 semanage fcontext $datadir -a -t container_file_t 
 restorecon -vR /data -T 0
