@@ -59,8 +59,8 @@ for package in $(ls */dot-config/* -d | cut -f1 -d/); do
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
     target_dir=$(userdbctl user $package --output=classic | cut -f5 -d:)
-    stow --target=$target_dir --stow --dotfiles $package/
-    chown -Rch $package:$package $target_dir --preserve-root
+    stow --target=$target_dir --stow --dotfiles $package/ -vvv
+    chown -Rc -h -P $package:$package $target_dir --preserve-root --from=root:root
 done
 
 groupadd data -f -r -U restic

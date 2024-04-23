@@ -4,18 +4,31 @@ IFS=$'\n\t'
 
 
 for package in $(ls */dot-config/* -d | cut -f1 -d/); do
-    target_dir=$(userdbctl user $package --output=classic | cut -f5 -d:)
-    stow -D --target $target_dir --dotfiles $package/
+    if userdbctl user $package &> /dev/null
+    then 
+        target_dir=$(userdbctl user $package --output=classic | cut -f6 -d:)
+        stow -D --target $target_dir --dotfiles $package/
 
-    if loginctl user-status $package
-    then
-        loginctl kill-user $package
+        if loginctl user-status $package &> /dev/null
+        then
+            loginctl kill-user $package
+        fi
+
+        userdel $package -rZ
     fi
-    userdel $package -rZ
-    groupdel $package -f
+
+    if userdbctl group $package &> /dev/null
+    then
+        groupdel $package -f
+    fi
 done
 
-groupdel data -f 
+if userdbctl group data &> /dev/null
+then    
+    groupdel data -f 
+fi
 
 # common_user=$(cat deployment_user_name.txt)
 # groupdel $common_user -f
+
+printf 'Completed teardown\n'
