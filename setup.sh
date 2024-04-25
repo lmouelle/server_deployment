@@ -59,12 +59,12 @@ for package in $(ls */dot-config/* -d | cut -f1 -d/); do
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
     target_dir=$(userdbctl user $package --output=classic | cut -f6 -d:)
-    stow --target=$target_dir --stow --dotfiles $package/ -vvvvv
+    stow --target=$target_dir --stow --dotfiles $package/
     chown -Rc -h -P $package:$package $target_dir --preserve-root --from=root:root
 done
 
 groupadd data -f -r -U restic
-chown -Rc --preserve-root :data $datadir/
+chown -R --preserve-root :data $datadir/
 chmod -Rc --preserve-root 750 $datadir/
 
 # Overwrite perms set above for $datadir/{comics,videos}
@@ -72,24 +72,25 @@ chmod -Rc --preserve-root 750 $datadir/
 # Can I write some manifest in each app/service/container and have it say what host permissions it needs?
 # May create 'videos', 'comics' groups for different container/users to access stuff like $datadir/videos
 # Feels like I'm recreating Ansible badly here...
-if userdbctl user restic 2>&1 /dev/null
+if userdbctl user restic &> /dev/null
 then
     usermod restic -aG torrents
 fi    
 
 if userdbctl group torrents 2>&1 /dev/null
 then 
+    usermod torrents -aG data
     chown -Rc --preserve-root :torrents $datadir/torrents/
 fi    
 
 semanage fcontext $datadir -a -t container_file_t 
-restorecon -vR /data -T 0
+restorecon -R /data -T 0
 
 # Now enable/start the systemd services I symlinked with stow, as the new user accounts
-for package in (ls */dot-config/* | cut -f1 -d/); do
+#for package in $(ls */dot-config/* | cut -f1 -d/); do
     # su $package -c 'systemctl daemon-reload --user' -l
     # systemd-run --no-ask-password --uid=$package -E XDG_RUNTIME_DIR=/run/user/$(id -u $package) -t --wait --pipe systemctl enable ~/.config/containers/systemd/ --now --user
-done
+#done
 
 # Need to do this so everything works? Unsure how to propogate podman secrets
 # TODO: Eventually bootstrap secrets with bitwarden sync
