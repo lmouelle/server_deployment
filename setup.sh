@@ -80,7 +80,7 @@ fi
 if userdbctl group torrents &> /dev/null
 then 
     usermod torrents --append --groups data
-    chown --recursive --changes --preserve-root :torrents $datadir/torrents/
+    chown --recursive --preserve-root :torrents $datadir/torrents/ --from=:data
 fi    
 
 semanage fcontext $datadir --add --type container_file_t 
