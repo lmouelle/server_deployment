@@ -15,6 +15,12 @@ IFS=$'\n\t'
 common_user=$(cat deployment_user_name.txt)
 datadir=$(cat datadir_name.txt)
 
+semanage fcontext -D
+semanage fcontext "$datadir(/.*)?" --add --type container_file_t -f d
+semanage fcontext "$datadir(/.*)?" --add --type container_file_t -f f
+semanage fcontext "$datadir(/.*)?" --add --type container_file_t -f l
+restorecon -R $datadir -T 0
+
 # Host DNF packages. We assume git is already installed else this script
 # would not be on the host, but for completeness I include it here
 dnf install podman fish git stow -y &> /dev/null # ansible (will I ever move to ansible?)
@@ -61,7 +67,13 @@ for package in $(ls */dot-config/* -d | cut -f1 -d/); do
     target_dir=$(userdbctl user $package --output=classic | cut -f6 -d:)
     stow --target=$target_dir --stow --dotfiles $package/
     chown --recursive --changes --no-dereference -P $package:$package $target_dir --preserve-root --from=root:root
+
+    semanage fcontext "$package/(/.*)?" --add --type container_file_t --ftype f
+    semanage fcontext "$package/(/.*)?" --add --type container_file_t --ftype d
+    semanage fcontext "$package/(/.*)?" --add --type container_file_t --ftype l
 done
+
+restorecon -T 0 ./ -R
 
 groupadd data --force --system --users restic
 chown --recursive --preserve-root :data $datadir/
@@ -82,10 +94,6 @@ then
     usermod torrents --append --groups data
     chown --recursive --preserve-root :torrents $datadir/torrents/ --from=:data
 fi    
-
-semanage fcontext -D
-semanage fcontext $datadir --add --type container_file_t 
-restorecon -R /data -T 0
 
 # Now enable/start the systemd services I symlinked with stow, as the new user accounts
 #for package in $(ls */dot-config/* | cut -f1 -d/); do
