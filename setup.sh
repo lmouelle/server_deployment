@@ -72,12 +72,12 @@ chmod --recursive --changes --preserve-root 750 $datadir/
 # Can I write some manifest in each app/service/container and have it say what host permissions it needs?
 # May create 'videos', 'comics' groups for different container/users to access stuff like $datadir/videos
 # Feels like I'm recreating Ansible badly here...
-if userdbctl user restic &> /dev/null
+if [ userdbctl user restic &> /dev/null ] && [ userdbctl group torrents &> /dev/null ]
 then
     usermod restic --append --groups torrents
 fi    
 
-if userdbctl group torrents &> /dev/null
+if [ userdbctl group torrents &> /dev/null ] && [ userdbctl group data &> /dev/null ]
 then 
     usermod torrents --append --groups data
     chown --recursive --preserve-root :torrents $datadir/torrents/ --from=:data
