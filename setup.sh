@@ -83,6 +83,7 @@ then
     chown --recursive --preserve-root :torrents $datadir/torrents/ --from=:data
 fi    
 
+semanage fcontext -D
 semanage fcontext $datadir --add --type container_file_t 
 restorecon -R /data -T 0
 
