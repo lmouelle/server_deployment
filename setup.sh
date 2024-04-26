@@ -49,23 +49,23 @@ for package in $(ls */dot-config/* -d | cut -f1 -d/); do
     common_user_group=$(userdbctl user $common_user --output=classic | cut -f5 -d:)
     if ! userdbctl user $package &> /dev/null
     then
-        useradd -mrU $package -G $common_user_group -s /usr/bin/nologin
+        useradd --create-home --system --user-group $package --groups $common_user_group --shell /usr/bin/nologin --add-subids-for-system
     fi
 
     loginctl enable-linger $package
     # TODO: Any SELinux file specific context to set here?
-    chown -Rc :$package $package/ --preserve-root
-    chmod 750 -Rc --preserve-root $package/
+    chown --recursive --changes :$package $package/ --preserve-root
+    chmod 750 --recursive --changes --preserve-root $package/
     # This script must be run as root, which runs stow as root and creates symlinks with
     # root:root as owner:group. Fix that immediately after
     target_dir=$(userdbctl user $package --output=classic | cut -f6 -d:)
     stow --target=$target_dir --stow --dotfiles $package/
-    chown -Rc -h -P $package:$package $target_dir --preserve-root --from=root:root
+    chown --recursive --changes --no-dereference -P $package:$package $target_dir --preserve-root --from=root:root
 done
 
-groupadd data -f -r -U restic
-chown -R --preserve-root :data $datadir/
-chmod -Rc --preserve-root 750 $datadir/
+groupadd data --force --system --users restic
+chown --recursive --preserve-root :data $datadir/
+chmod --recursive --changes --preserve-root 750 $datadir/
 
 # Overwrite perms set above for $datadir/{comics,videos}
 # TODO: Add media servers like Calibre and Jellyfin here, and *arr apps.
@@ -74,16 +74,16 @@ chmod -Rc --preserve-root 750 $datadir/
 # Feels like I'm recreating Ansible badly here...
 if userdbctl user restic &> /dev/null
 then
-    usermod restic -aG torrents
+    usermod restic --append --groups torrents
 fi    
 
-if userdbctl group torrents 2>&1 /dev/null
+if userdbctl group torrents &> /dev/null
 then 
-    usermod torrents -aG data
-    chown -Rc --preserve-root :torrents $datadir/torrents/
+    usermod torrents --append --groups data
+    chown --recursive --changes --preserve-root :torrents $datadir/torrents/
 fi    
 
-semanage fcontext $datadir -a -t container_file_t 
+semanage fcontext $datadir --add --type container_file_t 
 restorecon -R /data -T 0
 
 # Now enable/start the systemd services I symlinked with stow, as the new user accounts
@@ -96,3 +96,5 @@ restorecon -R /data -T 0
 # TODO: Eventually bootstrap secrets with bitwarden sync
 # cat $datadir/deployment/container_configs/restic/.restic_passwd | podman secret create restic-repo-password -
 # cat $datadir/deployment/container_configs/restic/.aws_secret_access_key | podman secret create aws-secret-access-key -
+
+printf 'Completed setup\n'
