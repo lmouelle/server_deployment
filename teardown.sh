@@ -11,7 +11,7 @@ for package in $(ls */dot-config/* -d | cut -f1 -d/); do
 
         if loginctl user-status $package &> /dev/null
         then
-            loginctl kill-user $package
+            loginctl terminate-user $package
         fi
 
         userdel $package -rZ
