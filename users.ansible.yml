@@ -18,9 +18,9 @@
 # Wait maybe I can just use a non system user but pass the right args to make it functionally the same so useradd knows
 # to add the subids automatically as it is a non system user
 # Seems like system users just have a UID/GID  < 1000? SYS_UID_{MIN,MAX} in /etc/login.defs
-- name: Create {{ item }} user
+- name: Create {{ username }} user
   ansible.builtin.user:
-    name: {{ item  }}
+    name: {{ username  }}
     create_home: true
     state: present
     system: true
@@ -28,17 +28,29 @@
     gid: "{{ unused_gids.stdout | random }}" # choose random unused value
 
 # Do I even need this if I place quadlets in /etc/
-- name: Set {{ item }} user to linger on login
-  ansible.builtin.command: "loginctl enable-linger {{ item }}"
+- name: Set {{ username }} user to linger on login
+  ansible.builtin.command: "loginctl enable-linger {{ username }}"
 
-- name: Get the {{ item }} user's home dir
-  ansible.builtin.shell: "userdbctl user {{ item  }} --output=classic | cut -f6 -d:"
+- name: Get the {{ username }} user's home dir
+  ansible.builtin.shell: "userdbctl user {{ username  }} --output=classic | cut -f6 -d:"
   register: user_home_dir
 
 - name: Copy over quadlets
   ansible.builtin.copy:
     dest: "{{ user_home_dir.stdout | quote }}/.config/containers/systemd/"
     mode: u=r,g=r
-    src: files/{{ item }}/
-    group: "{{ item }}"
-    owner: "{{ item }}"
+    src: files/{{ username }}/
+    group: "{{ username }}"
+    owner: "{{ username }}"
+
+- name: Copy any secret files, target paths and names specified in config.ansible.yml
+  ansible.builtin.copy:
+    dest: "{{ user_home_dir.stdout | quote }}/{{ item.key }}"
+    mode: u=r # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
+    content: "{{ item.value }}"
+    group: "{{ username }}"
+    owner: "{{ username }}"
+  loop: "{{ query('ansible.builtin.subelements', secret_files_by_username, username, {'skip_missing': true }) }}"
+
+# TODO: Ensure user started now and check that login is a success, container is up and stays up, etc
+# If the container/user started earlier and stuff like file perms/selinux weren't yet set, we'll have issues

@@ -6,3 +6,8 @@ extra_group_members:
   torrents: data
 
 data_dir: /data/
+
+# TODO: can you use bitwarden lookup module here or must it be in main.ansible.yml?
+secret_files_by_username:
+  torrents:
+    'secrets/wg0.conf': "{{ lookup('bitwarden.secrets.lookup', 'protonvpn_wireguard_conf_file') }}"

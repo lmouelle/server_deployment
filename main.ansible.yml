@@ -57,6 +57,9 @@
       groups: "{{ item.value }}"
       append: true
     loop: "{{ extra_group_members | dict2items }}"
+    loop_control:
+      label: "{{ item.key }}"
+      loop_var: username
 
   - name: Make data dir accessible to all data users
     ansible.builtin.file:
