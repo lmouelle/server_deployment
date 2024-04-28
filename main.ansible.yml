@@ -1,0 +1,87 @@
+---
+- name: Configure Host
+  hosts: all
+
+  vars_files:
+  - config.ansible.yml
+
+  pre_tasks:
+  - name: Install DNS, pip, etc packages for host
+    ansible.builtin.dnf:
+      name: 
+      # ansible and git must be installed before this as prereqs but including as a single source of truth
+      - ansible
+      - git
+      - podman
+      - fish # this is really for my personal user more than anyone else
+      state: latest
+      
+  - name: Install pip modules used by ansible for selinux, bitwarden, etc in requirement.yml
+    ansible.builtin.pip:
+      name: "{{ item }}"
+    loop:
+    - bitwarden-sdk
+    - libselinux-python
+    - policycoreutils-python
+
+  tasks:
+  - name: Core logic to create all users and containers
+    ansible.builtin.import_tasks: user.ansible.yml
+    loop: "{{ users }}"
+
+  - name: Open firewall ports
+    ansible.posix.firewalld:
+      immediate: true
+      permanent: true
+      port: "{{ item }}"
+      state: enabled
+    loop:
+    # This are all for deluge/gluetun currently, move into the config yml?
+    - 56881-56889/tcp
+    - 56881-56889/udp
+    - 8112/udp
+    - 8112/tcp
+    - 58856/tcp
+    - 58856/udp
+
+  # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
+  # Find disks and create volumes/etc and mount based on UUID?
+  - name: Create group for managing common data directory
+    ansible.builtin.group:
+      name: data
+      system: true
+
+  - name: Assign users to additonal groups
+    ansible.builtin.user:
+      name: "{{ item.key }}"
+      groups: "{{ item.value }}"
+      append: true
+    loop: "{{ extra_group_members | dict2items }}"
+
+  - name: Make data dir accessible to all data users
+    ansible.builtin.file:
+      path: "{{ data_dir }}" # TODO put into some config file?
+      group: data
+      mode: g=rw # TODO: Best perms? bear in mind torrents group writes to /data/torrents, restic reads from all, *arr read and write from specific paths
+      state: file
+
+  # These two are needed by gluetun container, the former
+  # to access the /dev/net/tun device and the latter so the container
+  # may load/read firewall rules with nftables module
+  - name: Allow container to use host devices (viz. gluetun)
+    ansible.posix.seboolean:
+      name: container_use_devices
+      state: true
+      persistent: true
+
+  - name: Allow container to load host kernel modules (viz. gluetun)
+    ansible.posix.seboolean:
+      name: domain_kernel_load_modules
+      state: true
+      persistent: true
+
+  - name: Set SELinux fcontext customizations for allowing containers to read/write from /data dir
+    community.general.sefcontext:
+      target: '{{ data_dir }}(/.*)?'
+      setype: container_file_t 
+      state: present
