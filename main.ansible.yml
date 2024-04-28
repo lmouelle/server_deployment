@@ -62,7 +62,7 @@
     ansible.builtin.file:
       path: "{{ data_dir }}" # TODO put into some config file?
       group: data
-      mode: g=rw # TODO: Best perms? bear in mind torrents group writes to /data/torrents, restic reads from all, *arr read and write from specific paths
+      mode: g=rw,u=rw # TODO: Best perms? bear in mind torrents group writes to /data/torrents, restic reads from all, *arr read and write from specific paths
       state: file
 
   # These two are needed by gluetun container, the former
