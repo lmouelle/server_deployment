@@ -4,12 +4,9 @@ IFS=$'\n\t'
 
 # TODO: Replace this with some new ansible playbook where state: absent
 
-for package in $(ls */dot-config/* -d | cut -f1 -d/); do
+for package in $(ls files/* -d | cut -f2 -d/); do
     if userdbctl user $package &> /dev/null
     then 
-        target_dir=$(userdbctl user $package --output=classic | cut -f6 -d:)
-        stow -D --target $target_dir --dotfiles $package/
-
         if loginctl user-status $package &> /dev/null
         then
             loginctl terminate-user $package
