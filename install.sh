@@ -8,10 +8,15 @@ set -euo pipefail
 # Just put everything in bitwarden and pull it with the ansible module from bitwarden
 export HISTCONTROL=ignorespace
 # Leading space is important here!
- export BWS_ACCESS_TOKEN=<token>
+ export BWS_ACCESS_TOKEN=$(cat .bw_access_token)
 
 # Install dependencies for ansible run
 ansible-galaxy collection install -r requirements.ansible.yml
+
+# Run the playbook now
+# --syntax-check
+# --check
+ansible-playbook --inventory inventory.ini main.ansible.yml
 
 # After install and setup, some remaining tasks that I have not/can not automate:
 # Set allow_remote to true for deluge core.conf, https only to true for web conf, create auth file for remote user in bitwarden,

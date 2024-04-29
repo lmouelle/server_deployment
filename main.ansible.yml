@@ -6,7 +6,7 @@
   - config.ansible.yml
 
   pre_tasks:
-  - name: Install DNS, pip, etc packages for host
+  - name: Install dnf packages for host
     ansible.builtin.dnf:
       name: 
       # ansible and git must be installed before this as prereqs but including as a single source of truth
@@ -26,8 +26,10 @@
 
   tasks:
   - name: Core logic to create all users and containers
-    ansible.builtin.import_tasks: user.ansible.yml
+    ansible.builtin.include_tasks: users.ansible.yml
     loop: "{{ users }}"
+    loop_control:
+      loop_var: username
 
   - name: Open firewall ports
     ansible.posix.firewalld:
