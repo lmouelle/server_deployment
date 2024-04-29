@@ -8,15 +8,25 @@ set -euo pipefail
 # Just put everything in bitwarden and pull it with the ansible module from bitwarden
 export HISTCONTROL=ignorespace
 # Leading space is important here!
- export BWS_ACCESS_TOKEN=$(cat .bw_access_token)
+ read -s -p "Enter root user password for dnf install: \n" root_pwd
+ read -s -p "Enter bitwarden access token: \n" bwtoken
+ export BWS_ACCESS_TOKEN=$bwtoken
+
+# We could use the pip and dnf module tasks inside ansible but this flow works
+# better for setting up ansible dependencies I think
+# git and ansible are prereqs for accessing this playbook, fish is just my personal user
+# Only podman is critical to containers setup. cockpit-podman is convenince for cockpit UI,
+# policycoreutils and libselinux is just because pip/PyPI does not have them
+
+# dnf install git ansible podman fish cockpit-podman python3-policycoreutils policycoreutils-python-utils python3-libselinux -y
+# pip install bitwarden-sdk
 
 # Install dependencies for ansible run
 ansible-galaxy collection install -r requirements.ansible.yml
 
-# Run the playbook now
-# --syntax-check
-# --check
-ansible-playbook --inventory inventory.ini main.ansible.yml
+# Run the playbook now. Preceding space is important to hide password from process history
+# --syntax-check and --check validate
+ ansible-playbook --inventory inventory.ini main.ansible.yml --check --ask-become-pass $root_pwd
 
 # After install and setup, some remaining tasks that I have not/can not automate:
 # Set allow_remote to true for deluge core.conf, https only to true for web conf, create auth file for remote user in bitwarden,
