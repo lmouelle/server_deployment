@@ -13,23 +13,27 @@
 
 # Do I even need this if I place quadlets in /etc/?
 - name: Set "{{ username }}" user to linger on login
-  ansible.builtin.command: "loginctl enable-linger {{ username }}"
-
-- name: Get the "{{ username }}" user's home dir
-  ansible.builtin.shell: "userdbctl user {{ username  }} --output=classic | cut -f6 -d:"
-  register: user_home_dir
+  register: linger_result
+  changed_when: linger_result.stdout != "AlreadyLingering"
+  ansible.builtin.shell:
+    cmd: "(loginctl show-user {{ username }} --no-pager --property=Linger --value --no-ask-password | grep yes) && echo AlreadyLingering || loginctl enable-linger {{ username }} --no-ask-password --no-pager"
+    executable: /bin/bash
 
 - name: Copy over quadlets
+  environment:
+    # This is set scoped to this task just for the validate block to work
+    QUADLET_UNIT_DIRS: "/home/{{ username }}/.config/containers/systemd/"
   ansible.builtin.copy:
-    dest: "{{ user_home_dir.stdout | quote }}/.config/containers/systemd/"
+    dest: "/home/{{ username }}/.config/containers/systemd/"
     mode: u=r,g=r
     src: "files/{{ username }}/"
     group: "{{ username }}"
     owner: "{{ username }}"
+    validate: /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
 
 - name: Copy any secret files, target paths and names specified in config.ansible.yml
   ansible.builtin.copy:
-    dest: "{{ user_home_dir.stdout | quote }}/{{ item.key }}"
+    dest: "/home/{{ username }}/{{ item.key }}"
     mode: u=r # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
     content: "{{ item.value }}"
     group: "{{ username }}"
