@@ -1,6 +1,8 @@
 ---
 # ansible.builtin.user would be better but that module does not support -F/--add-subids-for-system
 - name: Create "{{ username }}" user
+  become: true
+  become_user: root
   ansible.builtin.command:
     creates: "/home/{{ username }}" # This works as long as we use standard home paths
     argv:
@@ -11,15 +13,11 @@
       - --user-group
       - "{{ username }}"
 
-# Do I even need this if I place quadlets in /etc/?
-- name: Set "{{ username }}" user to linger on login
-  register: linger_result
-  changed_when: linger_result.stdout != "AlreadyLingering"
-  ansible.builtin.shell:
-    cmd: "(loginctl show-user {{ username }} --no-pager --property=Linger --value --no-ask-password | grep yes) && echo AlreadyLingering || loginctl enable-linger {{ username }} --no-ask-password --no-pager"
-    executable: /bin/bash
-
 - name: Copy over quadlets
+  # Become required here for stat-ing dest before startup to see if file has changed
+  # My personal user, running this playbook, does not have those permissions by default
+  become: true
+  become_user: root # TODO: I get errors when running this as {{ username }}, why? That would be better to run as 
   environment:
     # This is set scoped to this task just for the validate block to work
     QUADLET_UNIT_DIRS: "/home/{{ username }}/.config/containers/systemd/"
@@ -29,16 +27,24 @@
     src: "files/{{ username }}/"
     group: "{{ username }}"
     owner: "{{ username }}"
-    validate: /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
+    validate: /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun %s
 
+# TODO: ansible vault claims that if src is an encrypted file that ansible vault knows about, it
+# will be placed at dest unecrypted. Confirm this
 - name: Copy any secret files, target paths and names specified in config.ansible.yml
   ansible.builtin.copy:
     dest: "/home/{{ username }}/{{ item.key }}"
     mode: u=r # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
-    content: "{{ item.value }}"
+    src: "{{ item.value }}"
     group: "{{ username }}"
     owner: "{{ username }}"
   loop: "{{ query('ansible.builtin.subelements', secret_files_by_username, username, {'skip_missing': true }) }}"
+
+# Do I even need this if I place quadlets in /etc/?
+- name: Set "{{ username }}" user to linger on login
+  become: true
+  become_user: root
+  ansible.builtin.command: "loginctl enable-linger {{ username }} --no-ask-password --no-pager"
 
 # TODO: Ensure user started now and check that login is a success, container is up and stays up, etc
 # If the container/user started earlier and stuff like file perms/selinux weren't yet set, we'll have issues

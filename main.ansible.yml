@@ -45,11 +45,15 @@
   # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
   # Find disks and create volumes/etc and mount based on UUID?
   - name: Create group for managing common data directory
+    become: true
+    become_user: root
     ansible.builtin.group:
       name: data
       system: true
 
   - name: Assign users to additonal groups
+    become: true
+    become_user: root
     ansible.builtin.user:
       name: "{{ item.key }}"
       groups: "{{ item.value }}"
@@ -59,6 +63,8 @@
       label: "{{ item.key }}"
 
   - name: Make data dir accessible to all data users
+    become: true
+    become_user: true
     ansible.builtin.file:
       path: "{{ data_dir }}" # TODO put into some config file?
       group: data
