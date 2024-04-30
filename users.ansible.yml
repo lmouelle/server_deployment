@@ -11,6 +11,7 @@
       - --system
       - --add-subids-for-system
       - --user-group
+      - --key UMASK=077
       - "{{ username }}"
 
 - name: Copy over quadlets
@@ -24,22 +25,39 @@
   ansible.builtin.copy:
     dest: "/home/{{ username }}/.config/containers/systemd/"
     # TODO: Do I need X or x or w here for perms?
-    mode: u=r,g=r
+    mode: u=rX,g=rX
     src: "files/{{ username }}/"
     group: "{{ username }}"
     owner: "{{ username }}"
     validate: /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun %s
 
+- name: Generate target dir for secrets
+  become: true
+  become_user: "{{ username }}"
+  no_log: true
+  ansible.builtin.file:
+    state: directory
+    path: "/home/{{ username }}/secrets"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: u=rX
+
 # TODO: ansible vault claims that if src is an encrypted file that ansible vault knows about, it
 # will be placed at dest unecrypted. Confirm this
 - name: Copy any secret files, target paths and names specified in config.ansible.yml
+  become: true
+  become_user: root
+  no_log: true
   ansible.builtin.copy:
-    dest: "/home/{{ username }}/{{ item.key }}"
+    dest: "/home/{{ username }}/{{ item.1.secret_dest }}"
     mode: u=r # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
-    src: "{{ item.value }}"
+    src: "{{ item.1.secret_src }}"
     group: "{{ username }}"
     owner: "{{ username }}"
-  loop: "{{ query('ansible.builtin.subelements', secret_files_by_username, username, {'skip_missing': true }) }}"
+  with_subelements:
+    - "{{ secret_files_by_username }}"
+    - secret_files
+  when: "username in item.0.username"
 
 # Do I even need this if I place quadlets in /etc/?
 - name: Set "{{ username }}" user to linger on login
