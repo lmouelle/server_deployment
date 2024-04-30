@@ -15,4 +15,6 @@ data_dir: /data/
 #'secrets/deluge/hostlist.conf': "{{ lookup('bitwarden.secrets.lookup', 'deluge_hostlist.conf') }}"
 secret_files_by_username:
   torrents:
-    'secrets/gluetun/wireguard/wg0.conf': "{{ lookup('bitwarden.secrets.lookup', 'f67690d6-94d1-4f20-b9f7-b161007c9652') }}"
+    # 'PathInContainerUseHomeDir': 'PathInsideContainer'
+    # e.g. '/home/torrents/...': '/config'
+    'secrets/gluetun/wireguard/wg0.conf': 'secrets/wg0.conf'

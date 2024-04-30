@@ -1,6 +1,5 @@
-oom
 .vscode/
 **/*state/**
-.bw_access_token
 test.ansible.yml
 *.log
+secrets/*

@@ -6,20 +6,11 @@
   - config.ansible.yml
 
   pre_tasks:
-  - name: Install pip modules used by ansible for bitwarden
-    ansible.builtin.pip:
-      name: bitwarden-sdk
-
   - name: Install dnf packages for host
     become_user: root
     become: true
     ansible.builtin.dnf:
       name: 
-      # ansible and git must be installed before this as prereqs but including as a single source of truth
-      - ansible
-      - git
-      # fish is really for my personal user more than anyone else
-      - fish 
       - podman
       - cockpit-podman 
       - python3-policycoreutils 
@@ -35,6 +26,8 @@
       loop_var: username
 
   - name: Open firewall ports
+    become: true
+    become_user: root
     ansible.posix.firewalld:
       immediate: true
       permanent: true
@@ -70,7 +63,7 @@
       path: "{{ data_dir }}" # TODO put into some config file?
       group: data
       mode: g=rw,u=rw # TODO: Best perms? bear in mind torrents group writes to /data/torrents, restic reads from all, *arr read and write from specific paths
-      state: file
+      recurse: true
 
   # These two are needed by gluetun container, the former
   # to access the /dev/net/tun device and the latter so the container

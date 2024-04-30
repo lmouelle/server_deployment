@@ -8,7 +8,7 @@ set -euo pipefail
 # Just put everything in bitwarden and pull it with the ansible module from bitwarden
 export HISTCONTROL=ignorespace
 # Leading space is important here!
- export BWS_ACCESS_TOKEN=$(cat .bw_access_token)
+ export BWS_ACCESS_TOKEN=$(ansible-vault view secrets/.bw_access_token)
 
 # We could use the pip and dnf module tasks inside ansible but this flow works
 # better for setting up ansible dependencies I think

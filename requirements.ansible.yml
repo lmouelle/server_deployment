@@ -1,5 +1,4 @@
 collections:
-  - bitwarden.secrets
   - ansible.posix
   - containers.podman
   - community.general # for sefcontext
