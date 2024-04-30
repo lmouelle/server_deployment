@@ -64,29 +64,35 @@
 
   - name: Make data dir accessible to all data users
     become: true
-    become_user: true
+    become_user: root
     ansible.builtin.file:
       path: "{{ data_dir }}" # TODO put into some config file?
       group: data
-      mode: g=rw,u=rw # TODO: Best perms? bear in mind torrents group writes to /data/torrents, restic reads from all, *arr read and write from specific paths
+      mode: g=rwX,u=rwX
       recurse: true
 
   # These two are needed by gluetun container, the former
   # to access the /dev/net/tun device and the latter so the container
   # may load/read firewall rules with nftables module
   - name: Allow container to use host devices (viz. gluetun)
+    become: true
+    become_user: root
     ansible.posix.seboolean:
       name: container_use_devices
       state: true
       persistent: true
 
   - name: Allow container to load host kernel modules (viz. gluetun)
+    become: true
+    become_user: root
     ansible.posix.seboolean:
       name: domain_kernel_load_modules
       state: true
       persistent: true
 
   - name: Set SELinux fcontext customizations for allowing containers to read/write from /data dir
+    become: true
+    become_user: root
     community.general.sefcontext:
       target: '{{ data_dir }}(/.*)?'
       setype: container_file_t 
