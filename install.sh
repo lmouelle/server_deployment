@@ -8,7 +8,8 @@ set -euo pipefail
 # Just put everything in bitwarden and pull it with the ansible module from bitwarden
 export HISTCONTROL=ignorespace
 # Leading space is important here!
- export BWS_ACCESS_TOKEN=$(ansible-vault view secrets/.bw_access_token)
+ bw_access_token=$(ansible-vault view secrets/.bw_access_token --vault-password-file secrets/.vault_passwd)
+ export BWS_ACCESS_TOKEN=$bw_access_token
 
 # We could use the pip and dnf module tasks inside ansible but this flow works
 # better for setting up ansible dependencies I think
@@ -24,7 +25,7 @@ ansible-galaxy collection install -r requirements.ansible.yml
 
 # Run the playbook now. Preceding space is important to hide password from process history
 # --syntax-check and --check for validating
- ansible-playbook --inventory inventory.ini main.ansible.yml --ask-become-pass
+ ansible-playbook --inventory inventory.ini main.ansible.yml --become-pass-file secrets/.become_passwd --vault-password-file secrets/.vault_passwd -vvv
 
 # After install and setup, some remaining tasks that I have not/can not automate:
 # Set allow_remote to true for deluge core.conf, https only to true for web conf, create auth file for remote user in bitwarden,
