@@ -1,18 +1,15 @@
 ---
-# ansible.builtin.user would be better but that module does not support -F/--add-subids-for-system
+# Note: For some reason u=rX on some mode args would result in files created with u=g=o=rX
+# UMASK seems like it's not the issue, and I dislike the 0765 syntax for file modes, so I use o-rwx
+# syntax explicitly to clear other file perms.
+
 - name: Create "{{ username }}" user
   become: true
   become_user: root
+# ansible.builtin.user would be better but that module does not support -F/--add-subids-for-system
   ansible.builtin.command:
     creates: "/home/{{ username }}" # This works as long as we use standard home paths
-    argv:
-      - useradd
-      - --create-home
-      - --system
-      - --add-subids-for-system
-      - --user-group
-      - --key UMASK=077
-      - "{{ username }}"
+    cmd: "useradd --create-home --system --add-subids-for-system --user-group --key UMASK=077 {{ username }}"
 
 - name: Copy over quadlets
   # Become required here for stat-ing dest before startup to see if file has changed
@@ -25,7 +22,7 @@
   ansible.builtin.copy:
     dest: "/home/{{ username }}/.config/containers/systemd/"
     # TODO: Do I need X or x or w here for perms?
-    mode: u=rX,g=rX
+    mode: u=rX,g=rX,o-rwx
     src: "files/{{ username }}/"
     group: "{{ username }}"
     owner: "{{ username }}"
@@ -40,7 +37,7 @@
     path: "/home/{{ username }}/secrets"
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: u=rX
+    mode: u=rX,g-rwx,o-rwx
 
 # TODO: ansible vault claims that if src is an encrypted file that ansible vault knows about, it
 # will be placed at dest unecrypted. Confirm this
@@ -50,7 +47,8 @@
   no_log: true
   ansible.builtin.copy:
     dest: "/home/{{ username }}/{{ item.1.secret_dest }}"
-    mode: u=r # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
+    # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
+    mode: u=r,g-rxw,o-rwx 
     src: "{{ item.1.secret_src }}"
     group: "{{ username }}"
     owner: "{{ username }}"
