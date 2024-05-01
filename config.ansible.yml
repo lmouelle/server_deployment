@@ -1,10 +1,3 @@
-users:
-  - torrents
-
-extra_group_members:
-  # restic: data, torrents
-  torrents: data
-
 data_dir: /data/
 
 # TODO: Consider adding SSL/TLS cert for deluge here as well?

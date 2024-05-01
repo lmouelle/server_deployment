@@ -55,6 +55,7 @@
   with_subelements:
     - "{{ secret_files_by_username }}"
     - secret_files
+    - {'skip_missing': true}
   when: "username in item.0.username"
 
 # Do I even need this if I place quadlets in /etc/?
