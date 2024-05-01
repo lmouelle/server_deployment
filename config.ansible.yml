@@ -8,6 +8,9 @@ data_dir: /data/
 #'secrets/deluge/hostlist.conf': "{{ lookup('bitwarden.secrets.lookup', 'deluge_hostlist.conf') }}"
 secret_files_by_username:
   - username: torrents
+    groups:
+    - data
+    # This path is both source in this playbook dir and dest in the user account (but not within the container)
     secret_files:
-    - secret_dest: 'secrets/wg0.conf'
-      secret_src: 'secrets/wg0.conf'
+    - 'secrets/wg0.conf'
+    - 'torrents/deluge_state/'

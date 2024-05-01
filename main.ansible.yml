@@ -21,9 +21,7 @@
   tasks:
   - name: Core logic to create all users and containers
     ansible.builtin.include_tasks: users.ansible.yml
-    with_elements:
-    - "{{ secret_files_by_username }}"
-    - username
+    loop: "{{ secret_files_by_username | map(attribute='username') }}"
     loop_control:
       loop_var: username
 
@@ -57,12 +55,12 @@
     become: true
     become_user: root
     ansible.builtin.user:
-      name: "{{ item.key }}"
-      groups: "{{ item.value }}"
+      name: "{{ item.0.username }}"
+      groups: "{{ item.1 }}"
       append: true
-    loop: "{{ extra_group_members | dict2items }}"
-    loop_control:
-      label: "{{ item.key }}"
+    with_subelements:
+    - "{{ secret_files_by_username }}"
+    - groups
 
   - name: Make data dir accessible to all data users
     become: true

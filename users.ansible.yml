@@ -37,7 +37,7 @@
     path: "/home/{{ username }}/secrets"
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: u=rX,g-rwx,o-rwx
+    mode: u=rwX,g-rwx,o-rwx
 
 # TODO: ansible vault claims that if src is an encrypted file that ansible vault knows about, it
 # will be placed at dest unecrypted. Confirm this
@@ -46,10 +46,10 @@
   become_user: root
   no_log: true
   ansible.builtin.copy:
-    dest: "/home/{{ username }}/{{ item.1.secret_dest }}"
+    dest: "/home/{{ username }}/{{ item.1 }}"
     # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
-    mode: u=r,g-rxw,o-rwx 
-    src: "{{ item.1.secret_src }}"
+    mode: u=rwX,g-rxw,o-rwx 
+    src: "{{ item.1 }}"
     group: "{{ username }}"
     owner: "{{ username }}"
   with_subelements:

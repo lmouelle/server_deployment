@@ -3,12 +3,11 @@ Description=Container for deluge daemon, web UI, GTK UI server
 
 [Container]
 Image=docker.io/linuxserver/deluge:2.1.1
-Volume=%h/secrets/deluge/:/config:Z
+Volume=%h/torrents/deluge_state/:/config:Z
 # TODO: Template-ize this file with ansible so I can pass in data/torrents dir from config.ansible.yml instead
 # of hard coding /data here
 Volume=/data/torrents/:/downloads:z,noexec
-# Remember I used to set PUID=1000 PGID=1000 with podman-compose needed here?
-Environment=TZ=America/Los_Angeles DELUGE_LOGLEVEL=info
+Environment=TZ=America/Los_Angeles DELUGE_LOGLEVEL=info PGID=%G PUID=%U
 # quadlets generates systemd-gluetun container name from gluetun.container
 # I can manually specifiy the generated container name but this is fine currently
 Network=container:systemd-gluetun
