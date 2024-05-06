@@ -3,96 +3,97 @@
   hosts: all
 
   vars_files:
-  - config.ansible.yml
+    - config.ansible.yml
 
   pre_tasks:
-  - name: Install dnf packages for host
-    become_user: root
-    become: true
-    ansible.builtin.dnf:
-      name: 
-      - podman
-      - cockpit-podman 
-      - python3-policycoreutils 
-      - policycoreutils-python-utils 
-      - python3-libselinux
-      state: latest      
+    - name: Install dnf packages for host
+      become_user: root
+      become: true
+      ansible.builtin.dnf:
+        name:
+          - podman = 4.9.4
+          - cockpit-podman = 86-1
+          - python3-policycoreutils = 3.5-8
+          - policycoreutils-python-utils = 3.5-8
+          - python3-libselinux = 39.5-1
+        state: present
 
   tasks:
-  - name: Core logic to create all users and containers
-    ansible.builtin.include_tasks: users.ansible.yml
-    loop: "{{ secret_files_by_username | map(attribute='username') }}"
-    loop_control:
-      loop_var: username
+    - name: Core logic to create all users and containers
+      ansible.builtin.include_tasks: users.ansible.yml
+      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop_control:
+        loop_var: username
 
-  - name: Open firewall ports
-    become: true
-    become_user: root
-    ansible.posix.firewalld:
-      immediate: true
-      permanent: true
-      port: "{{ item }}"
-      state: enabled
-    loop:
-    # This are all for deluge/gluetun currently, move into the config yml?
-    - 56881-56889/tcp
-    - 56881-56889/udp
-    - 8112/udp
-    - 8112/tcp
-    - 58856/tcp
-    - 58856/udp
+    - name: Open host firewall ports
+      become: true
+      become_user: root
+      ansible.posix.firewalld:
+        immediate: true
+        permanent: true
+        port: "{{ item }}"
+        state: enabled
+      loop:
+        # This are all for deluge/gluetun currently, move into the config yml?
+        # Or move this into some gluetun.tasks.ansible.yml?
+        - 56881-56889/tcp
+        - 56881-56889/udp
+        - 8112/udp
+        - 8112/tcp
+        - 58856/tcp
+        - 58856/udp
 
-  # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
-  # Find disks and create volumes/etc and mount based on UUID?
-  - name: Create group for managing common data directory
-    become: true
-    become_user: root
-    ansible.builtin.group:
-      name: data
-      system: true
-      state: present
+    # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
+    # Find disks and create volumes/etc and mount based on UUID?
+    - name: Create group for managing common data directory
+      become: true
+      become_user: root
+      ansible.builtin.group:
+        name: data
+        system: true
+        state: present
 
-  - name: Assign users to additonal groups
-    become: true
-    become_user: root
-    ansible.builtin.user:
-      name: "{{ item.0.username }}"
-      groups: "{{ item.1 }}"
-      append: true
-    with_subelements:
-    - "{{ secret_files_by_username }}"
-    - groups
+    - name: Assign users to additonal groups
+      become: true
+      become_user: root
+      ansible.builtin.user:
+        name: "{{ item.0.username }}"
+        groups: "{{ item.1 }}"
+        append: true
+      with_subelements:
+        - "{{ secret_files_by_username }}"
+        - groups
 
-  - name: Make data dir accessible to all data users
-    become: true
-    become_user: root
-    ansible.builtin.file:
-      path: "{{ data_dir }}" # TODO put into some config file?
-      group: data
-      mode: g=rwX,u=rwX,o-rwx
-      recurse: true
-      setype: container_file_t
-      # TODO: Do i want this to be true? Seems like way to shoot myself in the foot
-      # If I setup *arr suite of apps I may need to make this true
-      follow: false
+    - name: Make data dir accessible to all data users
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ data_dir }}" # TODO put into some config file?
+        group: data
+        mode: g=rwX,u=rwX,o-rwx
+        recurse: true
+        setype: container_file_t
+        # TODO: Do i want this to be true? Seems like way to shoot myself in the foot
+        # If I setup *arr suite of apps I may need to make this true
+        follow: false
 
-  # These two are needed by gluetun container, the former
-  # to access the /dev/net/tun device and the latter so the container
-  # may load/read firewall rules with nftables module. See if I can remove them,
-  # in git history in setup.sh there is links to github issues describing how to drop
-  # this sebool requirements for truly rootless
-  - name: Allow container to use host devices (viz. gluetun)
-    become: true
-    become_user: root
-    ansible.posix.seboolean:
-      name: container_use_devices
-      state: true
-      persistent: true
+    # These two are needed by gluetun container, the former
+    # to access the /dev/net/tun device and the latter so the container
+    # may load/read firewall rules with nftables module. See if I can remove them,
+    # in git history in setup.sh there is links to github issues describing how to drop
+    # this sebool requirements for truly rootless
+    - name: Allow container to use host devices (viz. gluetun)
+      become: true
+      become_user: root
+      ansible.posix.seboolean:
+        name: container_use_devices
+        state: true
+        persistent: true
 
-  - name: Allow container to load host kernel modules (viz. gluetun)
-    become: true
-    become_user: root
-    ansible.posix.seboolean:
-      name: domain_kernel_load_modules
-      state: true
-      persistent: true
+    - name: Allow container to load host kernel modules (viz. gluetun)
+      become: true
+      become_user: root
+      ansible.posix.seboolean:
+        name: domain_kernel_load_modules
+        state: true
+        persistent: true

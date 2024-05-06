@@ -3,7 +3,7 @@
 # UMASK seems like it's not the issue, and I dislike the 0765 syntax for file modes, so I use o-rwx
 # syntax explicitly to clear other file perms.
 
-- name: Create "{{ username }}" user
+- name: "Create user {{ username }}"
   become: true
   become_user: root
 # ansible.builtin.user would be better but that module does not support -F/--add-subids-for-system
@@ -15,7 +15,7 @@
   # Become required here for stat-ing dest before startup to see if file has changed
   # My personal user, running this playbook, does not have those permissions by default
   become: true
-  become_user: root # TODO: I get errors when running this as {{ username }}, why? That would be better to run as 
+  become_user: root
   environment:
     # This is set scoped to this task just for the validate block to work
     QUADLET_UNIT_DIRS: "/home/{{ username }}/.config/containers/systemd/"
@@ -39,16 +39,13 @@
     group: "{{ username }}"
     mode: u=rwX,g-rwx,o-rwx
 
-# TODO: ansible vault claims that if src is an encrypted file that ansible vault knows about, it
-# will be placed at dest unecrypted. Confirm this
 - name: Copy any secret files, target paths and names specified in config.ansible.yml
   become: true
   become_user: root
   no_log: true
   ansible.builtin.copy:
     dest: "/home/{{ username }}/{{ item.1 }}"
-    # TODO: Only secret used here is gluetun config which is readonly, in future some secret files may need read/write based on application
-    mode: u=rwX,g-rxw,o-rwx 
+    mode: u=rwX,g-rxw,o-rwx
     src: "{{ item.1 }}"
     group: "{{ username }}"
     owner: "{{ username }}"
@@ -58,8 +55,7 @@
     - {'skip_missing': true}
   when: "username in item.0.username"
 
-# Do I even need this if I place quadlets in /etc/?
-- name: Set "{{ username }}" user to linger on login
+- name: "Set {{ username }} user to linger on login"
   become: true
   become_user: root
   ansible.builtin.command: "loginctl enable-linger {{ username }} --no-ask-password --no-pager"
