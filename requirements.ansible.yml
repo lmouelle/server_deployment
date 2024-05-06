@@ -1,4 +1,3 @@
 collections:
   - ansible.posix
   - containers.podman
-  - community.general # for sefcontext
