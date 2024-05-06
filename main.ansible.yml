@@ -6,16 +6,27 @@
     - config.ansible.yml
 
   pre_tasks:
-    - name: Install dnf packages for host
+    - name: Install dnf packages for controller node
+      become_user: root
+      become: true
+      delegate_to: localhost
+      ansible.builtin.dnf:
+        name:
+          # These are only required for the sebooleans I set below
+          # TODO: Move these into some $username.ansible.yml file or into the config file?
+          # Even better, follow up on github links below and remove those two sebooleans
+          # so I can run gluetun rootless without those host modifications
+          - python3-libselinux = 39.5
+          - python3-libsemanage = 3.5
+        state: present
+
+    - name: Install dnf packages for nas
       become_user: root
       become: true
       ansible.builtin.dnf:
         name:
           - podman = 4.9.4
-          - cockpit-podman = 86-1
-          - python3-policycoreutils = 3.5-8
-          - policycoreutils-python-utils = 3.5-8
-          - python3-libselinux = 39.5-1
+          - cockpit-podman = 86
         state: present
 
   tasks:
