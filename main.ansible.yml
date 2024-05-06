@@ -69,7 +69,7 @@
     ansible.builtin.file:
       path: "{{ data_dir }}" # TODO put into some config file?
       group: data
-      mode: g=rwX,u=rwX
+      mode: g=rwX,u=rwX,o-rwx
       recurse: true
 
   # These two are needed by gluetun container, the former
