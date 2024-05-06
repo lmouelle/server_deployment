@@ -10,7 +10,9 @@ Volume=/data/torrents/:/downloads:z,noexec
 Environment=TZ=America/Los_Angeles DELUGE_LOGLEVEL=info PGID=%G PUID=%U
 # quadlets generates systemd-gluetun container name from gluetun.container
 # I can manually specifiy the generated container name but this is fine currently
-Network=container:systemd-gluetun
+Network=container:systemd-gluetun 
+SubUIDMap=%u
+SubGIDMap=%g
 
 [Service]
 Restart=always
