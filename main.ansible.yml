@@ -71,6 +71,10 @@
       group: data
       mode: g=rwX,u=rwX,o-rwx
       recurse: true
+      setype: container_file_t
+      # TODO: Do i want this to be true? Seems like way to shoot myself in the foot
+      # If I setup *arr suite of apps I may need to make this true
+      follow: false
 
   # These two are needed by gluetun container, the former
   # to access the /dev/net/tun device and the latter so the container
@@ -92,11 +96,3 @@
       name: domain_kernel_load_modules
       state: true
       persistent: true
-
-  - name: Set SELinux fcontext customizations for allowing containers to read/write from /data dir
-    become: true
-    become_user: root
-    community.general.sefcontext:
-      target: '{{ data_dir }}(/.*)?'
-      setype: container_file_t 
-      state: present
