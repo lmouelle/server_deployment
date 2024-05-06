@@ -50,6 +50,7 @@
     ansible.builtin.group:
       name: data
       system: true
+      state: present
 
   - name: Assign users to additonal groups
     become: true
