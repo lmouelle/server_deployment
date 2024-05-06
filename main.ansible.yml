@@ -25,23 +25,27 @@
       loop_control:
         loop_var: username
 
+    # TODO: Maybe put this all in a dedicated zone,
+    # and then I can just recreate the zone to recreate all firewall rules easily?
+    # Maybe 1 zone per user account or 1 zone per container?
     - name: Open host firewall ports
       become: true
       become_user: root
       ansible.posix.firewalld:
+        service: "{{ item }}"
         immediate: true
         permanent: true
-        port: "{{ item }}"
         state: enabled
       loop:
-        # This are all for deluge/gluetun currently, move into the config yml?
-        # Or move this into some gluetun.tasks.ansible.yml?
-        - 56881-56889/tcp
-        - 56881-56889/udp
-        - 8112/udp
-        - 8112/tcp
-        - 58856/tcp
-        - 58856/udp
+        # ssh and dhcp should be auto configured by server installer, here for completeness
+        - ssh
+        - dhcpv6-client
+        # cockpit web UI is optional but I want it here
+        - cockpit
+        # These are for gluetun/deluge, move to some config or users/torrents.ansible.yml file
+        - deluge-web
+        - deluge-daemon
+        - deluge-thin-client-gtk
 
     # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
     # Find disks and create volumes/etc and mount based on UUID?
