@@ -57,7 +57,9 @@
 - name: "Set {{ username }} user to linger on login"
   become: true
   become_user: root
-  ansible.builtin.command: "loginctl enable-linger {{ username }} --no-ask-password --no-pager"
+  ansible.builtin.command:
+    creates: "/home/{{ username }}"
+    cmd: "loginctl enable-linger {{ username }} --no-ask-password --no-pager"
 
 # TODO: Ensure user started now and check that login is a success, container is up and stays up, etc
 # If the container/user started earlier and stuff like file perms/selinux weren't yet set, we'll have issues
