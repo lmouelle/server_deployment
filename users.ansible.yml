@@ -21,8 +21,7 @@
     QUADLET_UNIT_DIRS: "/home/{{ username }}/.config/containers/systemd/"
   ansible.builtin.copy:
     dest: "/home/{{ username }}/.config/containers/systemd/"
-    # TODO: Do I need X or x or w here for perms?
-    mode: u=rX,g=rX,o-rwx
+    mode: u=rX,g-rwx,o-rwx
     src: "files/{{ username }}/"
     group: "{{ username }}"
     owner: "{{ username }}"
