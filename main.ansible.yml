@@ -18,6 +18,8 @@
           - python3-libsemanage = 3.5
           - podman = 5:4.9.4
           - cockpit-podman = 87
+          # This one contains machinectl, mostly for my own debugging
+          - systemd-container = 254.10
         state: present
 
   tasks:
