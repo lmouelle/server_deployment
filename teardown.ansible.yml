@@ -1,0 +1,119 @@
+---
+- name: Delete container and user details from target node
+  hosts: all
+
+  vars_files:
+    - config.ansible.yml
+
+  tasks:
+    # Note that I have a task on install to add packages to controller node
+    # as well. Not writing a task to remove those for now, restricting this file to
+    # target node teardown
+    - name: Remove dnf packages installed on target
+      become: true
+      become_user: root
+      ansible.builtin.dnf:
+        autoremove: true
+        state: absent
+        # Do not ping DNF repos just to delete packages
+        cacheonly: true
+        name:
+          - podman
+          - cockpit-podman
+
+    # TODO: Get this list from config.ansible.yml or $username.ansible.yml instead of hardcoding
+    - name: Remove opened firewall ports
+      become: true
+      become_user: root
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        immediate: true
+        permanent: true
+        state: disabled
+      loop:
+        - deluge-web
+        - deluge-daemon
+        - deluge-thin-client-gtk
+
+    - name: Remove data dir group
+      become: true
+      become_user: root
+      ansible.builtin.group:
+        name: data
+        state: absent
+
+    - name: Disallow container to use host devices (viz. gluetun)
+      become: true
+      become_user: root
+      ansible.posix.seboolean:
+        name: container_use_devices
+        state: false
+        persistent: true
+
+    - name: Disallow container to load host kernel modules (viz. gluetun)
+      become: true
+      become_user: root
+      ansible.posix.seboolean:
+        name: domain_kernel_load_modules
+        state: false
+        persistent: true
+
+    - name: Disable linger on user so I can kill them safely
+      become: true
+      become_user: root
+      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop_control:
+        loop_var: username
+      register: disable_linger_result
+      failed_when:
+        - "'Failed to look up user' not in disable_linger_result.stderr"
+        - disable_linger_result.rc != 0
+      ansible.builtin.command:
+        cmd: "loginctl disable-linger {{ username }}"
+        removes: "/home/{{ username }}"
+
+    - name: Kill active user sessions
+      become: true
+      become_user: root
+      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop_control:
+        loop_var: username
+      register: kill_user_result
+      failed_when:
+        - "'Failed to look up user' not in kill_user_result.stderr"
+        - "'is not logged in or lingering' not in kill_user_result.stderr"
+        - kill_user_result.rc != 0
+      ansible.builtin.command:
+        cmd: "loginctl kill-user {{ username }}"
+        removes: "/home/{{ username }}"
+
+    - name: Remove all users
+      become: true
+      become_user: root
+      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop_control:
+        loop_var: username
+      ansible.builtin.user:
+        name: "{{ username }}"
+        state: absent
+        remove: true
+
+    - name: "Check that data dir exists at {{ data_dir }}"
+      register: data_dir_stat_result
+      ansible.builtin.stat:
+        path: "{{ data_dir }}"
+        follow: false
+        # False below here is simply to make stat slightly faster, not important
+        get_checksum: false
+        get_mime: false
+        get_attributes: false
+
+    - name: "Reset selinux details on {{ data_dir }}"
+      become: true
+      become_user: root
+      when: data_dir_stat_result.stat.exists is defined and data_dir_stat_result.stat.exists
+      ansible.builtin.file:
+        path: "{{ data_dir }}"
+        setype: default_t
+        recurse: true
+        follow: false
