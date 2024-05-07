@@ -23,12 +23,6 @@
         state: present
 
   tasks:
-    - name: Core logic to create all users and containers
-      ansible.builtin.include_tasks: users.ansible.yml
-      loop: "{{ secret_files_by_username | map(attribute='username') }}"
-      loop_control:
-        loop_var: username
-
     # TODO: Maybe put this all in a dedicated zone,
     # and then I can just recreate the zone to recreate all firewall rules easily?
     # Maybe 1 zone per user account or 1 zone per container?
@@ -105,3 +99,9 @@
         name: domain_kernel_load_modules
         state: true
         persistent: true
+
+    - name: Core logic to create all users and containers
+      ansible.builtin.include_tasks: users.ansible.yml
+      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop_control:
+        loop_var: username
