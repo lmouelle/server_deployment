@@ -11,6 +11,10 @@ Environment=TZ=America/Los_Angeles DELUGE_LOGLEVEL=info
 # quadlets generates systemd-gluetun container name from gluetun.container
 # I can manually specifiy the generated container name but this is fine currently
 Network=container:systemd-gluetun 
+# We need to map data group into this container
+# so that abc (deluge user) inside container can access it
+# currently it shows users as 'nobody' for /data/torrents (/downloads within container)
+# How to ensure all users of the container all are mapped?
 SubUIDMap=%u
 SubGIDMap=%g
 
