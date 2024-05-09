@@ -1,5 +1,4 @@
 .vscode/
-**/*state/**
 test.ansible.yml
 *.log
 secrets/*
