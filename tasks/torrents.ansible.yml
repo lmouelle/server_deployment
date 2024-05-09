@@ -151,15 +151,36 @@
     owner: torrents
     mode: u=rwX,g-rxw,o-rwx
 
-- name: Copy over restic script files
+- name: Copy over restic backup script for systemd timers
   become: true
   become_user: torrents
   ansible.builtin.copy:
-    src: scripts/torrents/
-    dest: /home/torrents/
+    dest: /home/torrents/backup.sh
     group: torrents
     owner: torrents
-    mode: u=rwX,g-rxw,o-rwx
+    mode: u=rwx,g-rxw,o-rwx
+    validate: bash -n %s
+    content: |
+      #!/usr/bin/bash
+      set -euo pipefail
+      export HISTCONTROL=ignorespace
+      # Leading space is important here
+       export AWS_ACCESS_KEY_ID=$(cat secrets/.wasabi_access_key_id)
+       export AWS_SECRET_ACCESS_KEY=$(cat secrets/.wasabi_secret_access_key)
+
+      restic backup $1 -vvv --read-concurrency 8
+
+      if ! restic check; then
+          printf "Post backup check failed\n"
+          exit 63
+      fi
+
+      restic forget --keep-daily 7 --keep-hourly 7 --keep-weekly 7 --prune
+
+      if ! restic check; then
+          printf "Post prune check failed\n"
+          exit 127
+      fi
 
 - name: Activate restic units with systemd
   become: true

@@ -1,6 +1,8 @@
 [Unit]
-Description=Backup data dir for torrents user
+Description=Backup data dir
 
 [Service]
 Type=oneshot
-ExecStart=%h/media_backup.sh
+ExecStart=%h/backup.sh /data
+Environment=RESTIC_REPOSITORY_FILE=%h/secrets/.restic_repo_media
+Environment=RESTIC_PASSWORD_FILE=%h/secrets/.restic_passwd_media
