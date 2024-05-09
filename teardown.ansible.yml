@@ -6,21 +6,6 @@
     - config.ansible.yml
 
   tasks:
-    # Note that I have a task on install to add packages to controller node
-    # as well. Not writing a task to remove those for now, restricting this file to
-    # target node teardown
-    - name: Remove dnf packages installed on target
-      become: true
-      become_user: root
-      ansible.builtin.dnf:
-        autoremove: true
-        state: absent
-        # Do not ping DNF repos just to delete packages
-        cacheonly: true
-        name:
-          - podman
-          - cockpit-podman
-
     # TODO: Get this list from config.ansible.yml or $username.ansible.yml instead of hardcoding
     - name: Remove opened firewall ports
       become: true
@@ -98,20 +83,9 @@
         state: absent
         remove: true
 
-    - name: "Check that data dir exists at {{ data_dir }}"
-      register: data_dir_stat_result
-      ansible.builtin.stat:
-        path: "{{ data_dir }}"
-        follow: false
-        # False below here is simply to make stat slightly faster, not important
-        get_checksum: false
-        get_mime: false
-        get_attributes: false
-
     - name: "Reset selinux details on {{ data_dir }}"
       become: true
       become_user: root
-      when: data_dir_stat_result.stat.exists is defined and data_dir_stat_result.stat.exists
       ansible.builtin.file:
         path: "{{ data_dir }}"
         setype: default_t

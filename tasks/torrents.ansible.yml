@@ -1,0 +1,134 @@
+---
+
+# These two are needed by gluetun container, the former
+# to access the /dev/net/tun device and the latter so the container
+# may load/read firewall rules with nftables module. See if I can remove them,
+# in git history in setup.sh there is links to github issues describing how to drop
+# this sebool requirements for truly rootless
+- name: Allow container to use host devices (viz. gluetun)
+  become: true
+  become_user: root
+  ansible.posix.seboolean:
+    name: container_use_devices
+    state: true
+    persistent: true
+
+- name: Allow container to load host kernel modules (viz. gluetun)
+  become: true
+  become_user: root
+  ansible.posix.seboolean:
+    name: domain_kernel_load_modules
+    state: true
+    persistent: true
+
+- name: Assign torrents user to data group
+  become: true
+  become_user: root
+  ansible.builtin.user:
+    name: torrents
+    groups: data
+    append: true
+
+- name: Fetch data group gid
+  register: group_get_result
+  ansible.builtin.group:
+    name: data
+
+- name: Assign torrents user subgids for data group
+  become: true
+  become_user: root
+  ansible.builtin.command:
+    creates: "/home/torrents"
+    cmd: "usermod --add-subgids {{ group_get_result.gid }}-{{ group_get_result.gid }}"
+
+- name: Create target secrets dir for user
+  become: true
+  become_user: torrents
+  ansible.builtin.file:
+    path: "/home/torrents/secrets"
+    mode: u=rwX,g-rxw,o-rwx
+    state: directory
+    owner: torrents
+    group: torrents
+
+- name: Copy any secrets to torrents user
+  become: true
+  become_user: root
+  ansible.builtin.copy:
+    dest: "/home/torrents/secrets/wg0.conf"
+    mode: u=rwx,g-rxw,o-rwx
+    src: secrets/wg0.conf
+    group: torrents
+    owner: torrents
+
+- name: "TMP: copy deluge state file"
+  become: true
+  become_user: root
+  ansible.builtin.copy:
+    dest: /home/torrents/deluge_state/
+    mode: u=rwx,g-rxw,o-rwx
+    src: torrents/deluge_state/
+    group: torrents
+    owner: torrents
+
+- name: Ensure the gluetun container
+  become: true
+  become_user: torrents
+  containers.podman.podman_container:
+    image: docker.io/qmcgaw/gluetun:v3.38
+    state: quadlet
+    name: gluetun
+    quadlet_dir: "/home/torrents/.config/containers/systemd"
+    cap_add:
+      - NET_ADMIN
+    device:
+      - /dev/net/tun
+    volume:
+      - "/home/torrents/secrets/wg0.conf:/gluetun/wireguard/wg0.conf:Z,noexec"
+    env:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: wireguard
+      VPN_PORT_FORWARDING: 'on'
+      VPN_PORT_FORWARDING_PROVIDER: protonvpn
+    quadlet_options:
+      - |
+        [Install]
+        WantedBy=deluge.service
+        WantedBy=default.target
+        [Service]
+        Restart=always
+    ports:
+      # 8112 is deluge web UI
+      - 8112:8112
+      # 6881 is data transfer/tracker announce
+      - 6881:6881
+      - 6881:6881/udp
+      # 58846 is deluge GTK UI
+      - 58846:58846
+
+- name: Ensure the deluge container
+  become: true
+  become_user: torrents
+  containers.podman.podman_container:
+    name: deluge
+    state: quadlet
+    image: docker.io/linuxserver/deluge:2.1.1
+    quadlet_dir: "/home/torrents/.config/containers/systemd"
+    volume:
+      - "/home/torrents/deluge_state/:/config:Z"
+      - "{{ data_dir }}torrents:/downloads:z,noexec"
+    env:
+      TZ: America/Los_Angeles
+      DELUGE_LOGLEVEL: info
+      PGID: "{{ group_get_result.gid }}"
+    network:
+      - "container:gluetun"
+    # Does this auto set the data dir gid to something container users see?
+    userns: auto
+    quadlet_options:
+      - |
+        [Service]
+        Restart=always
+
+# restic here? as systemd, not container
+# Secret files, etc as well

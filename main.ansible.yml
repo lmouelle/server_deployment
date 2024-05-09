@@ -68,29 +68,8 @@
         # If I setup *arr suite of apps I may need to make this true
         follow: false
 
-    # These two are needed by gluetun container, the former
-    # to access the /dev/net/tun device and the latter so the container
-    # may load/read firewall rules with nftables module. See if I can remove them,
-    # in git history in setup.sh there is links to github issues describing how to drop
-    # this sebool requirements for truly rootless
-    - name: Allow container to use host devices (viz. gluetun)
-      become: true
-      become_user: root
-      ansible.posix.seboolean:
-        name: container_use_devices
-        state: true
-        persistent: true
-
-    - name: Allow container to load host kernel modules (viz. gluetun)
-      become: true
-      become_user: root
-      ansible.posix.seboolean:
-        name: domain_kernel_load_modules
-        state: true
-        persistent: true
-
     - name: Core logic to create all users and containers
-      ansible.builtin.include_tasks: users.ansible.yml
+      ansible.builtin.include_tasks: tasks/users.ansible.yml
       loop: "{{ secret_files_by_username | map(attribute='username') }}"
       loop_control:
         loop_var: username
