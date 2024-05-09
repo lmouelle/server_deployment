@@ -115,6 +115,8 @@
     state: quadlet
     image: docker.io/linuxserver/deluge:2.1.1
     quadlet_dir: "/home/torrents/.config/containers/systemd"
+    groups:
+      - data
     volume:
       - "/home/torrents/deluge_state/:/config:Z"
       - "{{ data_dir }}torrents:/downloads:z,noexec"
