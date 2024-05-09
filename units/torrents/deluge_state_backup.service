@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup deluge state for torrents user
+
+[Service]
+Type=oneshot
+ExecStart=%h/deluge_state_backup.sh

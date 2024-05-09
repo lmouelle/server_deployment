@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup data dir for torrents user
+
+[Service]
+Type=oneshot
+ExecStart=%h/media_backup.sh

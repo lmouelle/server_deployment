@@ -141,5 +141,35 @@
         [Service]
         Restart=always
 
-# restic here? as systemd, not container
-# Secret files, etc as well
+- name: Copy over restic backup unit files
+  become: true
+  become_user: torrents
+  ansible.builtin.copy:
+    src: units/torrents/
+    dest: /home/torrents/.config/systemd/user/
+    group: torrents
+    owner: torrents
+    mode: u=rwX,g-rxw,o-rwx
+
+- name: Copy over restic script files
+  become: true
+  become_user: torrents
+  ansible.builtin.copy:
+    src: scripts/torrents/
+    dest: /home/torrents/
+    group: torrents
+    owner: torrents
+    mode: u=rwX,g-rxw,o-rwx
+
+- name: Activate restic units with systemd
+  become: true
+  become_user: torrents
+  loop:
+    - media_backup.timer
+    - deluge_state_backup.timer
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    # Started is idempotent, reloaded always runs freshed file content
+    state: reloaded
+    enabled: true
+    scope: user

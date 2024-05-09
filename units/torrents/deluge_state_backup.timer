@@ -1,0 +1,9 @@
+[Unit]
+Description=Run deluge state backup hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
