@@ -56,19 +56,9 @@
   become: true
   become_user: root
   ansible.builtin.copy:
-    dest: "/home/torrents/secrets/wg0.conf"
+    dest: "/home/torrents/secrets/"
     mode: u=rwx,g-rxw,o-rwx
-    src: secrets/wg0.conf
-    group: torrents
-    owner: torrents
-
-- name: "TMP: copy deluge state file"
-  become: true
-  become_user: root
-  ansible.builtin.copy:
-    dest: /home/torrents/deluge_state/
-    mode: u=rwx,g-rxw,o-rwx
-    src: torrents/deluge_state/
+    src: secrets/torrents/
     group: torrents
     owner: torrents
 
@@ -85,7 +75,7 @@
     device:
       - /dev/net/tun
     volume:
-      - "/home/torrents/secrets/wg0.conf:/gluetun/wireguard/wg0.conf:Z,noexec"
+      - "/home/torrents/secrets/.wg0.conf:/gluetun/wireguard/wg0.conf:Z,noexec"
     env:
       VPN_SERVICE_PROVIDER: custom
       VPN_TYPE: wireguard
