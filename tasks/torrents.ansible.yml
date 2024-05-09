@@ -126,8 +126,10 @@
       PGID: "{{ group_get_result.gid }}"
     network:
       - "container:gluetun"
-    # Does this auto set the data dir gid to something container users see?
-    userns: auto
+    gidmap:
+      # This image creates an abc user besides root in the container
+      # and makes abc a member of the 'users' group which has GID 1000
+      - 'g+1000:@{{ group_get_result.gid }}'
     quadlet_options:
       - |
         [Service]
