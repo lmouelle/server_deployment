@@ -125,7 +125,7 @@
       - data
     volume:
       - "/home/torrents/deluge_state/:/config:Z"
-      - "{{ data_dir }}torrents:/downloads:z,noexec"
+      - "/data/torrents:/downloads:z,noexec"
     env:
       TZ: America/Los_Angeles
       DELUGE_LOGLEVEL: info
