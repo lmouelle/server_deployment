@@ -63,13 +63,8 @@
       loop: "{{ secret_files_by_username | map(attribute='username') }}"
       loop_control:
         loop_var: username
-      register: kill_user_result
-      failed_when:
-        - "'Failed to look up user' not in kill_user_result.stderr"
-        - "'is not logged in or lingering' not in kill_user_result.stderr"
-        - kill_user_result.rc != 0
       ansible.builtin.command:
-        cmd: "loginctl kill-user {{ username }}"
+        cmd: "pkill -U {{ username }}"
         removes: "/home/{{ username }}"
 
     - name: Remove all users
