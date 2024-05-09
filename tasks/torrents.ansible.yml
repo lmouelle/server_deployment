@@ -1,5 +1,21 @@
 ---
 
+# TODO: Maybe put this all in a dedicated zone,
+# and then I can just recreate the zone to recreate all firewall rules easily?
+# Maybe 1 zone per user account or 1 zone per container?
+- name: Open host firewall ports
+  become: true
+  become_user: root
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    immediate: true
+    permanent: true
+    state: enabled
+  loop:
+    - deluge-web
+    - deluge-daemon
+    - deluge-thin-client-gtk
+
 # These two are needed by gluetun container, the former
 # to access the /dev/net/tun device and the latter so the container
 # may load/read firewall rules with nftables module. See if I can remove them,

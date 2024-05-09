@@ -40,10 +40,6 @@
         - dhcpv6-client
         # cockpit web UI is optional but I want it here
         - cockpit
-        # These are for gluetun/deluge, move to some config or users/torrents.ansible.yml file
-        - deluge-web
-        - deluge-daemon
-        - deluge-thin-client-gtk
 
     # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
     # Find disks and create volumes/etc and mount based on UUID?
