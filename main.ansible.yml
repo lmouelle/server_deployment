@@ -55,17 +55,6 @@
         system: true
         state: present
 
-    - name: Assign users to additonal groups
-      become: true
-      become_user: root
-      ansible.builtin.user:
-        name: "{{ item.0.username }}"
-        groups: "{{ item.1 }}"
-        append: true
-      with_subelements:
-        - "{{ secret_files_by_username }}"
-        - groups
-
     - name: Make data dir accessible to all data users
       become: true
       become_user: root

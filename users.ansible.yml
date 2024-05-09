@@ -3,13 +3,37 @@
 # UMASK seems like it's not the issue, and I dislike the 0765 syntax for file modes, so I use o-rwx
 # syntax explicitly to clear other file perms.
 
+# ansible.builtin.user would be better instead of ansible.builtin.command:
+# but that module does not support -F/--add-subids-for-system.
+# And useradd does not allows specifying --add-subgids on creation, so we a few different
+# command steps to create the user account
+
 - name: "Create user {{ username }}"
   become: true
   become_user: root
-# ansible.builtin.user would be better but that module does not support -F/--add-subids-for-system
   ansible.builtin.command:
     creates: "/home/{{ username }}" # This works as long as we use standard home paths
     cmd: "useradd --create-home --system --add-subids-for-system --user-group --key UMASK=077 {{ username }}"
+
+- name: Assign user to additonal groups
+  become: true
+  become_user: root
+  register: group_add_result
+  ansible.builtin.user:
+    name: "{{ item.0.username }}"
+    groups: "{{ item.1 }}"
+    append: true
+  loop: "{{ secret_files_by_username | subelements('groups', {'skip_missing': true}) }}"
+  when: "username in item.0.username"
+
+- name: Assign user subgid ranges of groups
+  become: true
+  become_user: root
+  ansible.builtin.command:
+    creates: "/home/{{ username }}"
+    cmd: "usermod --add-subgids {{ group_add_result.gid }}-{{ group_add_result.gid }}"
+  loop: "{{ secret_files_by_username | subelements('groups', {'skip_missing': true}) }}"
+  when: "username in item.0.username"
 
 - name: Copy over quadlets
   # Become required here for stat-ing dest before startup to see if file has changed
