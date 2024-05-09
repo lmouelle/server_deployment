@@ -1,3 +1,0 @@
-[Unit]
-Description=Container for NAS backup script, wrapper function
-After=check@prune
