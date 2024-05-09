@@ -4,8 +4,8 @@ set -euo pipefail
 
  export AWS_ACCESS_KEY_ID=$(cat secrets/.wasabi_access_key_id)
  export AWS_SECRET_ACCESS_KEY=$(cat secrets/.wasabi_secret_access_key)
- export RESTIC_PASSWORD=$(cat secrets/.restic_passwd_deluge_state)
- export RESTIC_REPOSITORY=$(cat secrets/.restic_repo_deluge_state)
+ export RESTIC_PASSWORD_FILE='secrets/.restic_passwd_deluge_state'
+ export RESTIC_REPOSITORY_FILE='secrets/.restic_repo_deluge_state'
 
 restic backup /home/torrents/deluge_state -vvv --read-concurrency 8
 
