@@ -1,12 +1,4 @@
 ---
-# Note: For some reason u=rX on some mode args would result in files created with u=g=o=rX
-# UMASK seems like it's not the issue, and I dislike the 0765 syntax for file modes, so I use o-rwx
-# syntax explicitly to clear other file perms.
-
-# ansible.builtin.user would be better instead of ansible.builtin.command:
-# but that module does not support -F/--add-subids-for-system.
-# And useradd does not allows specifying --add-subgids on creation, so we a few different
-# command steps to create the user account
 
 - name: "Create user {{ username }}"
   become: true
