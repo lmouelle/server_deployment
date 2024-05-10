@@ -11,9 +11,10 @@
 - name: "Create user {{ username }}"
   become: true
   become_user: root
-  ansible.builtin.command:
-    creates: "/home/{{ username }}"
-    cmd: "useradd --create-home --system --add-subids-for-system --user-group --key UMASK=077 {{ username }}"
+  ansible.builtin.user:
+    name: "{{ username }}"
+    state: present
+    umask: '077'
 
 - name: Arrange quadlets, config, state and secrets
   ansible.builtin.include_tasks: "{{ username }}.ansible.yml"
