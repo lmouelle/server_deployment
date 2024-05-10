@@ -1,0 +1,14 @@
+deluge state files to backup:
+- session.state (?? not sure if I need this that much)
+- state/*.torrent
+- state/torrents.state
+
+deluge secrets for vault:
+- auth
+- parts of the conf files??
+- ssl/{daemon.cert,daemon.pkey} (??)
+
+deluge config for templating:
+- core.conf
+- web.conf
+- plugins/
