@@ -145,6 +145,7 @@
 - name: Copy over restic backup unit files
   become: true
   become_user: torrents
+  register: backup_unit_file_copy_result
   ansible.builtin.copy:
     src: units/torrents/
     dest: /home/torrents/.config/systemd/user/
@@ -186,11 +187,7 @@
 - name: Activate restic units with systemd
   become: true
   become_user: torrents
-  loop:
-    # TODO: Get result of the copy operation and loop over that
-    # instead of hardcoding the same file names everywhere
-    - media_backup.timer
-    - deluge_state_backup.timer
+  loop: "{{ backup_unit_file_copy_result | map('attribute', dest) }}"
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     # Started is idempotent, reloaded always runs freshed file content
