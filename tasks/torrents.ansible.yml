@@ -109,6 +109,7 @@
       - 8112:8112
       # 6881 is data transfer/tracker announce
       - 6881:6881
+
       - 6881:6881/udp
       # 58846 is deluge GTK UI
       - 58846:58846
@@ -186,6 +187,8 @@
   become: true
   become_user: torrents
   loop:
+    # TODO: Get result of the copy operation and loop over that
+    # instead of hardcoding the same file names everywhere
     - media_backup.timer
     - deluge_state_backup.timer
   ansible.builtin.systemd_service:
