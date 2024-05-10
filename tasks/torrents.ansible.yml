@@ -58,19 +58,9 @@
   ansible.builtin.command:
     cmd: "usermod torrents --add-subgids {{ group_get_result.gid }}-{{ group_get_result.gid }}"
 
-- name: Create target secrets dir for user
-  become: true
-  become_user: torrents
-  ansible.builtin.file:
-    path: "/home/torrents/secrets"
-    mode: u=rwX,g-rxw,o-rwx
-    state: directory
-    owner: torrents
-    group: torrents
-
 - name: Copy any secrets to torrents user
   become: true
-  become_user: root
+  become_user: torrents
   ansible.builtin.copy:
     dest: "/home/torrents/secrets/"
     mode: u=rwx,g-rxw,o-rwx
