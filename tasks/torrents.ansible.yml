@@ -121,8 +121,7 @@
       TZ: America/Los_Angeles
       DELUGE_LOGLEVEL: info
       PGID: "{{ group_get_result.gid }}"
-    network:
-      - "container:gluetun"
+    network: container:gluetun
     gidmap:
       # This image creates an abc user besides root in the container
       # and makes abc a member of the 'users' group which has GID 1000
@@ -140,7 +139,7 @@
     dest: /home/torrents/.config/systemd/user/
     group: torrents
     owner: torrents
-    mode: '600'
+    mode: '700'
 
 - name: Copy over restic backup script for systemd timers
   become: true
