@@ -46,7 +46,8 @@
     - name: Disable linger on user so I can kill them safely
       become: true
       become_user: root
-      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop:
+        - torrents
       loop_control:
         loop_var: username
       register: disable_linger_result
@@ -60,7 +61,8 @@
     - name: Kill active user sessions
       become: true
       become_user: root
-      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop:
+        - torrents
       loop_control:
         loop_var: username
       ansible.builtin.command:
@@ -70,7 +72,8 @@
     - name: Remove all users
       become: true
       become_user: root
-      loop: "{{ secret_files_by_username | map(attribute='username') }}"
+      loop:
+        - torrents
       loop_control:
         loop_var: username
       ansible.builtin.user:
@@ -78,11 +81,11 @@
         state: absent
         remove: true
 
-    - name: "Reset selinux details on {{ data_dir }}"
+    - name: "Reset selinux details on /data"
       become: true
       become_user: root
       ansible.builtin.file:
-        path: "{{ data_dir }}"
+        path: /data
         setype: default_t
         recurse: true
         follow: false
