@@ -145,7 +145,7 @@
 
 - name: Copy over restic backup script for systemd timers
   become: true
-  become_user: torrents
+  become_user: root
   ansible.builtin.copy:
     dest: /home/torrents/backup.sh
     group: torrents
