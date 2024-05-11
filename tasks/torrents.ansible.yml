@@ -141,7 +141,7 @@
     dest: /home/torrents/.config/systemd/user/
     group: torrents
     owner: torrents
-    mode: u=rwX,g-rxw,o-rwx
+    mode: '400'
 
 - name: Copy over restic backup script for systemd timers
   become: true
