@@ -135,13 +135,12 @@
 - name: Copy over restic backup unit files
   become: true
   become_user: torrents
-  register: backup_unit_file_copy_result
   ansible.builtin.copy:
     src: units/torrents/
     dest: /home/torrents/.config/systemd/user/
     group: torrents
     owner: torrents
-    mode: '700'
+    mode: '600'
 
 - name: Copy over restic backup script for systemd timers
   become: true
