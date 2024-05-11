@@ -63,7 +63,7 @@
   become_user: torrents
   ansible.builtin.copy:
     dest: "/home/torrents/secrets/"
-    mode: u=rwx,g-rxw,o-rwx
+    mode: '0400'
     src: secrets/torrents/
     group: torrents
     owner: torrents
