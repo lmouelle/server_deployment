@@ -177,7 +177,9 @@
 - name: Activate restic units with systemd
   become: true
   become_user: torrents
-  loop: "{{ backup_unit_file_copy_result | map('attribute', 'dest') }}"
+  loop:
+    - deluge_state_backup.timer
+    - media_backup.timer
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     # Started is idempotent, reloaded always runs freshed file content
