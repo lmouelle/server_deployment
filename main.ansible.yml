@@ -24,7 +24,7 @@
 
   tasks:
     - name: Core logic to init the file system and mounts
-      ansible.builtin.incldue_tasks: tasks/filesys.ansible.yml
+      ansible.builtin.include_tasks: tasks/filesys.ansible.yml
 
     - name: Core logic to create all users and containers
       ansible.builtin.include_tasks: tasks/users.ansible.yml
