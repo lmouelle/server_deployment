@@ -23,24 +23,6 @@
         state: present
 
   tasks:
-    # TODO: Maybe put this all in a dedicated zone,
-    # and then I can just recreate the zone to recreate all firewall rules easily?
-    # Maybe 1 zone per user account or 1 zone per container?
-    - name: Open host firewall ports
-      become: true
-      become_user: root
-      ansible.posix.firewalld:
-        service: "{{ item }}"
-        immediate: true
-        permanent: true
-        state: enabled
-      loop:
-        # ssh and dhcp should be auto configured by server installer, here for completeness
-        - ssh
-        - dhcpv6-client
-        # cockpit web UI is optional but I want it here
-        - cockpit
-
     # One requirement is a /data drive is mounted, I guess I have to do that on OS installation?
     # Find disks and create volumes/etc and mount based on UUID?
     - name: Create group for managing common data directory
