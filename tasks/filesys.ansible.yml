@@ -51,7 +51,7 @@
     group: root
     owner: root
     mode: '777'
-    dest:  /etc/systemd/system/btrfs-scrub.service
+    dest: /etc/systemd/system/btrfs-scrub.service
     content: |
       [Unit]
       Description=Scrub btrfs filesystem, verify block checksums
