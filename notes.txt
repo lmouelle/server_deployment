@@ -12,3 +12,9 @@ deluge config for templating:
 - core.conf
 - web.conf
 - plugins/
+
+Also look into removing the 2 sebooleans in torrents for gluetun
+
+
+May 10 18:24:15 nas gluetun[26295]: 2024-05-11T01:24:15Z INFO [wireguard] Using userspace implementation since Kernel support does not exist
+Can I somehow enable wireguard support in my kernel for performance?
