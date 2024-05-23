@@ -14,12 +14,14 @@
           # first two are just for seboolean module
           # long term, figure out how to not require changing those host booleans
           # so gluetun can run truly rootless
-          - python3-libselinux = 3.5
-          - python3-libsemanage = 3.5
-          - podman = 5:4.9.4
-          - cockpit-podman = 87
+          - python3-libselinux
+          - python3-libsemanage
+          - podman
+          - cockpit-podman
           # This one contains machinectl, mostly for my own debugging
-          - systemd-container = 254.10
+          - systemd-container
+          # For host backup and restore
+          - restic
         state: present
 
   tasks:
