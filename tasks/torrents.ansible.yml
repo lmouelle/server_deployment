@@ -7,14 +7,17 @@
   become: true
   become_user: root
   ansible.posix.firewalld:
-    service: "{{ item }}"
+    port: "{{ item }}"
     immediate: true
     permanent: true
     state: enabled
   loop:
-    - deluge-web
-    - deluge-daemon
-    - deluge-thin-client-gtk
+    # TODO: Dedup with deluge quadlet below
+    # TODO: Figure out deluge port forwarding
+    - 8112/tcp
+    - 6881/tcp
+    - 6881/udp
+    - 58846/tcp
 
 # These two are needed by gluetun container, the former
 # to access the /dev/net/tun device and the latter so the container
@@ -176,7 +179,7 @@
   become: true
   become_user: torrents
   loop:
-    - deluge_state_backup.timer
+    - deluge_state_backup.timer    
     - media_backup.timer
   ansible.builtin.systemd_service:
     name: "{{ item }}"
@@ -184,3 +187,4 @@
     state: reloaded
     enabled: true
     scope: user
+    daemon_reload: true
