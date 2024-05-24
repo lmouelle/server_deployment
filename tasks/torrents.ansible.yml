@@ -183,8 +183,7 @@
     - media_backup.timer
   ansible.builtin.systemd_service:
     name: "{{ item }}"
-    # Started is idempotent, reloaded always runs freshed file content
-    state: reloaded
+    state: started
     enabled: true
     scope: user
     daemon_reload: true
