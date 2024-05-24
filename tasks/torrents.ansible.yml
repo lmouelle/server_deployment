@@ -43,13 +43,14 @@
 - name: Assign torrents user to data group
   become: true
   become_user: root
+  register: torrents_user_update_result
   ansible.builtin.user:
     name: torrents
     groups: data
     append: true
 
 - name: Fetch data group gid
-  register: group_get_result
+  register: data_group_get_result
   changed_when: true
   ansible.builtin.group:
     name: data
@@ -59,7 +60,7 @@
   become_user: root
   changed_when: true
   ansible.builtin.command:
-    cmd: "usermod torrents --add-subgids {{ group_get_result.gid }}-{{ group_get_result.gid }}"
+    cmd: "usermod torrents --add-subgids {{ data_group_get_result.gid }}-{{ data_group_get_result.gid }}"
 
 - name: Copy any secrets to torrents user
   become: true
@@ -123,12 +124,20 @@
     env:
       TZ: America/Los_Angeles
       DELUGE_LOGLEVEL: info
-      PGID: "{{ group_get_result.gid }}"
+      # PGID/PUID set the UID/GID used by the abc/deluge user within the container
+      # So PUID: 1001 means within the container, root uid = 0, abc uid = 1001
+      # This does not interact with host permissions
+      PUID: 1001
     network: container:gluetun
+    uidmap:
+      # This image creates an abc user besides root in the container,
+      # to run the deluge processes. `id -u abc` seems to always give 911,
+      # even after multiple container recreates
+      - 'u+1001:@{{ torrents_user_update_result.uid }}'
     gidmap:
       # This image creates an abc user besides root in the container
       # and makes abc a member of the 'users' group which has GID 1000
-      - 'g+1000:@{{ group_get_result.gid }}'
+      - 'g+1000:@{{ data_group_get_result.gid }}'
     quadlet_options:
       - |
         [Service]
@@ -179,7 +188,7 @@
   become: true
   become_user: torrents
   loop:
-    - deluge_state_backup.timer    
+    - deluge_state_backup.timer
     - media_backup.timer
   ansible.builtin.systemd_service:
     name: "{{ item }}"
