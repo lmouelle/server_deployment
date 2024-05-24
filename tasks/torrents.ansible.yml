@@ -186,4 +186,10 @@
     state: started
     enabled: true
     scope: user
+
+- name: Reload so updates to unit files are noticed
+  become: true
+  become_user: torrents
+  ansible.builtin.systemd_service:
     daemon_reload: true
+    scope: user
