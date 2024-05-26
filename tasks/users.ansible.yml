@@ -33,7 +33,7 @@
     dest: "/home/{{ username }}/.config/systemd/user/"
     group: "{{ username }}"
     owner: "{{ username }}"
-    mode: '700'
+    mode: '600'
 
 - name: "Arrange quadlets, config, container specific permissions, etc for {{ username }}"
   ansible.builtin.include_tasks: "{{ username }}.ansible.yml"
