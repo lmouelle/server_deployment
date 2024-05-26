@@ -3,7 +3,7 @@
 # TODO: Maybe put this all in a dedicated zone,
 # and then I can just recreate the zone to recreate all firewall rules easily?
 # Maybe 1 zone per user account or 1 zone per container?
-- name: Open host firewall ports
+- name: Open host firewall ports for deluge/gluetun
   become: true
   become_user: root
   ansible.posix.firewalld:
@@ -130,6 +130,8 @@
       - 'g+1000:@{{ data_group_get_result.gid }}'
     quadlet_options:
       - |
+        [Install]
+        WantedBy=default.target
         [Service]
         Restart=always
 
