@@ -1,0 +1,26 @@
+---
+
+- name: Ensure the postgres container
+  become: true
+  become_user: nextcloud
+  containers.podman.podman_container:
+    name: postgres
+    state: quadlet
+    image: docker.io/library/postgres:16.3
+    quadlet_dir: /home/nextcloud/.config/containers/systemd
+    env:
+      POSTGRES_DB_FILE: /home/nextcloud/secrets/.postgres_db_nextcloud_name
+      POSTGRES_USER_FILE: /home/nextcloud/secrets/.postgres_user_nextcloud_name
+      POSTGRES_PASSWORD_FILE: /home/nextcloud/secrets/.postgres_nextcloud_passwd
+    restart_policy: always
+
+
+# - name: Ensure the redis container
+
+# - name: Ensure the nextcloud container, php-fpm
+
+# - name: Ensure the background sync job (systemd timer, cron?)
+
+# - name: Ensure the reverse proxy/web server
+
+# - name: Ensure the restic backup script
