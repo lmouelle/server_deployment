@@ -62,16 +62,6 @@
   ansible.builtin.command:
     cmd: "usermod torrents --add-subgids {{ data_group_get_result.gid }}-{{ data_group_get_result.gid }}"
 
-- name: Copy any secrets to torrents user
-  become: true
-  become_user: torrents
-  ansible.builtin.copy:
-    dest: "/home/torrents/secrets/"
-    mode: '0400'
-    src: secrets/torrents/
-    group: torrents
-    owner: torrents
-
 - name: Ensure the gluetun container
   become: true
   become_user: torrents
@@ -143,16 +133,6 @@
         [Service]
         Restart=always
 
-- name: Copy over restic backup unit files
-  become: true
-  become_user: torrents
-  ansible.builtin.copy:
-    src: units/torrents/
-    dest: /home/torrents/.config/systemd/user/
-    group: torrents
-    owner: torrents
-    mode: '700'
-
 - name: Copy over restic backup script for systemd timers
   become: true
   become_user: root
@@ -183,22 +163,3 @@
           printf "Post prune check failed\n"
           exit 127
       fi
-
-- name: Activate restic units with systemd
-  become: true
-  become_user: torrents
-  loop:
-    - deluge_state_backup.timer
-    - media_backup.timer
-  ansible.builtin.systemd_service:
-    name: "{{ item }}"
-    state: started
-    enabled: true
-    scope: user
-
-- name: Reload so updates to unit files are noticed
-  become: true
-  become_user: torrents
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    scope: user
