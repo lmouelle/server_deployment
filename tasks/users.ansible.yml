@@ -38,13 +38,30 @@
 - name: "Arrange quadlets, config, container specific permissions, etc for {{ username }}"
   ansible.builtin.include_tasks: "{{ username }}.ansible.yml"
 
-- name: "Activate systemd timer units for {{ username }}"
+- name: "List all systemd timers and quadlet units for user {{ username }}"
   become: true
   become_user: "{{ username }}"
-  with_fileglob: "units/{{ username }}/*"
+  register: find_units_result
+  changed_when: true
+  ansible.builtin.find:
+    path: "/home/{{ username }}/.config/"
+    use_regex: true
+    recurse: true
+    patterns:
+      # This assumes we only have timers to start and containers we are mapping to service files
+      # If we have hand written .services without a timer this will fail
+      - '.*\.container$'
+      - '.*\.timer$'
+
+- name: "Activate systemd timer and quadlet container units for {{ username }}"
+  become: true
+  become_user: "{{ username }}"
+  loop: "{{ find_units_result.files | map(attribute='path') | map('ansible.builtin.basename') }}"
   ansible.builtin.systemd_service:
-    name: "{{ item }}"
-    state: "{{ 'started' if (item.endswith('.timer')) else 'reloaded' }}"
+    # Regex here because timer units must be started with .timer extension, but systemctl wants quadlet units
+    # to be enabled/started with .service or have no extension (systemd defaults to .service)
+    name: "{{ item | regex_replace('\\.container$', '.service') }}"
+    state: "{{ 'started' if item.endswith('.timer') else 'restarted' }}"
     enabled: true
     scope: user
     daemon_reload: true
