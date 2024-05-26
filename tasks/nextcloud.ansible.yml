@@ -12,7 +12,6 @@
       POSTGRES_DB_FILE: /home/nextcloud/secrets/.postgres_db_nextcloud_name
       POSTGRES_USER_FILE: /home/nextcloud/secrets/.postgres_user_nextcloud_name
       POSTGRES_PASSWORD_FILE: /home/nextcloud/secrets/.postgres_nextcloud_passwd
-    restart_policy: always
 
 
 # - name: Ensure the redis container
