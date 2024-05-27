@@ -123,7 +123,7 @@
     dest: /home/torrents/backup.sh
     group: torrents
     owner: torrents
-    mode: u=rwx,g-rxw,o-rwx
+    mode: '600'
     validate: bash -n %s
     content: |
       #!/usr/bin/bash
