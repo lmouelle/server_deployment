@@ -101,7 +101,7 @@
           exit 31
       fi
 
-      php occ maintenance:mode --on
+      podman exec --user www-data nextcloud_app php occ maintenance:mode --on
 
       # Leading spaces matters here
       # TODO: We dump with --format=plain by default, --format=directory or =tar is more better
@@ -117,7 +117,7 @@
       # We put the SQL dump here with the other nextcloud files for easy backup
       restic backup /home/nextcloud/nextcloud_app_data/ -vvv
 
-      php occ maintenance:mode --off
+      podman exec --user www-data nextcloud_app php occ maintenance:mode --off
 
       if ! restic check; then
           printf "Post backup check failed\n" >&2
