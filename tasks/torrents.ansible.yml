@@ -104,11 +104,11 @@
       # This image creates an abc user besides root in the container,
       # to run the deluge processes. `id -u abc` seems to always give 911,
       # even after multiple container recreates
-      - 'u+1001:@{{ torrents_user_update_result.uid }}'
+      - 'u+1001:@{{ user_uid }}'
     gidmap:
       # This image creates an abc user besides root in the container
       # and makes abc a member of the 'users' group which has GID 1000
-      - 'g+1000:@{{ data_group_get_result.gid }}'
+      - 'g+1000:@{{ data_group_gid }}'
     quadlet_options:
       - |
         [Install]
