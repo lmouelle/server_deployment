@@ -1,0 +1,21 @@
+- name: "Assign data group to user {{ username }}"
+  become: true
+  become_user: root
+  register: user_update_result
+  ansible.builtin.user:
+    name: "{{ username }}"
+    groups: data
+    append: true
+
+- name: Fetch data group gid
+  register: data_group_get_result
+  changed_when: true
+  ansible.builtin.group:
+    name: data
+
+- name: "Assign data group subgids to user {{ username }}"
+  become: true
+  become_user: root
+  changed_when: true
+  ansible.builtin.command:
+    cmd: "usermod {{ username }} --add-subgids {{ data_group_get_result.gid }}-{{ data_group_get_result.gid }}"
