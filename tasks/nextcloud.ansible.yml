@@ -65,7 +65,7 @@
   become_user: nextcloud
   containers.podman.podman_container:
     name: nextcloud_cron
-    image: nextcloud:apache
+    image: docker.io/library/nextcloud:apache
     entrypoint: /cron.sh
     quadlet_options:
       - |
