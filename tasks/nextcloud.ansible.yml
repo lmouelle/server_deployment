@@ -28,7 +28,7 @@
   become_user: nextcloud
   containers.podman.podman_container:
     name: redis
-    image: redis:alpine
+    image: docker.io/library/redis:alpine
     state: quadlet
     quadlet_dir: /home/nextcloud/.config/containers/systemd
     quadlet_options:
