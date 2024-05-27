@@ -130,4 +130,3 @@
       fi
 
       printf "postgres DB and nextcloud app backup completed\n"
-
