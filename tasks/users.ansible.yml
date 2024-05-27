@@ -61,7 +61,7 @@
     # Regex here because timer units must be started with .timer extension, but systemctl wants quadlet units
     # to be enabled/started with .service or have no extension (systemd defaults to .service)
     name: "{{ item | regex_replace('\\.container$', '.service') }}"
-    state: "{{ 'started' if item.endswith('.timer') else 'restarted' }}"
+    state: started
     enabled: true
     scope: user
     daemon_reload: true
