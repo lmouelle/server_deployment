@@ -1,5 +1,8 @@
 ---
 
+- name: Core logic to create all users and containers
+  ansible.builtin.include_tasks: data_group_assign.ansible.yml
+
 - name: Ensure the postgres container
   become: true
   become_user: nextcloud
