@@ -1,0 +1,35 @@
+---
+
+# This will have caddy/apache/nginx do routing/port forwarding subdomains to
+# locahost:58143 or any port from nextcloud.falkes.net
+
+- name: Open host firewall ports for caddy frontdoor
+  become: true
+  become_user: root
+  loop:
+    - 443/tcp
+    - 80/udp
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    immediate: true
+    permanent: true
+    state: enabled
+
+- name: Ensure caddy config for reverse proxy
+  become: true
+  become_user: frontdoor
+
+- name: Ensure caddy container
+  become: true
+  become_user: frontdoor
+  containers.podman.podman_container:
+    name: caddy
+    state: quadlet
+    image: caddy:2.8-alpine
+    quadlet_dir: /home/frontdoor/.config/containers/systemd
+    ports:
+      - 443:433
+      - 80:80
+    # TODO: define args for this command or a caddyfile?
+    # TODO: Get ssl cert into secrets flow, figure out renewel requirements
+    entrypoint: "caddy reverse-proxy"
