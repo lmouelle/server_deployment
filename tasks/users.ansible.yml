@@ -14,6 +14,7 @@
   ansible.builtin.copy:
     dest: "/home/{{ username }}/secrets/"
     mode: '400'
+    directory_mode: '500'
     src: secrets/{{ username }}/
     group: "{{ username }}"
     owner: "{{ username }}"
@@ -29,11 +30,12 @@
   become: true
   become_user: "{{ username }}"
   ansible.builtin.copy:
-    src: "units/{{ username }}"
+    src: "units/{{ username }}/"
     dest: "/home/{{ username }}/.config/systemd/user/"
     group: "{{ username }}"
     owner: "{{ username }}"
-    mode: 'u=rX'
+    mode: '400'
+    directory_mode: '500'
 
 - name: "Arrange quadlets, config, container specific permissions, etc for {{ username }}"
   ansible.builtin.include_tasks: "{{ username }}.ansible.yml"
