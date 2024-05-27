@@ -44,7 +44,7 @@
   become_user: nextcloud
   containers.podman.podman_container:
     name: nextcloud_app
-    image: nextcloud:apache
+    image: docker.io/library/nextcloud:apache
     state: quadlet
     volume:
       - /home/nextcloud/nextcloud_app_data:/var/www/html:Z
