@@ -17,7 +17,7 @@
       POSTGRES_PASSWORD_FILE: /run/secrets/.postgres_nextcloud_passwd
     volumes:
       - /home/nextcloud/secrets/postgres/:/run/secrets/:Z,noexec
-      - /home/nextcloud/postgres_data:/var/lib/postgresql/data:z,noexec
+      - /data/nextcloud/postgres/:/var/lib/postgresql/data:z,noexec
     quadlet_options:
       - |
         [Install]
@@ -49,8 +49,8 @@
     image: docker.io/library/nextcloud:apache
     state: quadlet
     volume:
-      - /home/nextcloud/nextcloud_app_data:/var/www/html:Z
-      - /home/nextcloud/postgres_data:/var/lib/postgresql/data:z,noexec
+      - /data/nextcloud/nextcloud_data/:/var/www/html:Z
+      - /data/nextcloud/postgres/:/var/lib/postgresql/data:z,noexec
     quadlet_dir: /home/nextcloud/.config/containers/systemd
     env:
       POSTGRES_HOST: postgres
