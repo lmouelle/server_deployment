@@ -19,3 +19,9 @@
   changed_when: true
   ansible.builtin.command:
     cmd: "usermod {{ username }} --add-subgids {{ data_group_get_result.gid }}-{{ data_group_get_result.gid }}"
+
+# ansible does not make this easy
+- name: "Set return values for user {{ username }}"
+  ansible.builtin.set_fact:
+    data_group_gid: "{{ data_group_get_result.gid }}"
+    user_uid: "{{ user_update_result.uid }}"
