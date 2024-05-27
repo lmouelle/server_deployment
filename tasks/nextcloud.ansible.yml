@@ -37,7 +37,6 @@
     quadlet_options:
       - |
         [Install]
-        WantedBy=nextcloud_nextcloud_cron.service
         WantedBy=nextcloud_app.service
         [Service]
         Restart=always
