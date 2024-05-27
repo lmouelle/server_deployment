@@ -18,3 +18,14 @@ Also look into removing the 2 sebooleans in torrents for gluetun
 
 May 10 18:24:15 nas gluetun[26295]: 2024-05-11T01:24:15Z INFO [wireguard] Using userspace implementation since Kernel support does not exist
 Can I somehow enable wireguard support in my kernel for performance?
+
+Would be nice to replace ansible-vault here with podman secrets, bitwarden cli, bitwarden ansible plugin...
+Maybe just add to the install script so it calls bitwarden cli?
+
+what ports do I need to open for postgres to be reached by nextcloud/php-fm/http-proxy?
+What about on my local env, with a SQL client like dbeaver from my dev machine into the server?
+
+How to do reverse-proxy or webserver...
+ok what if I use both in 1? Should I?
+caddy or nginx reverse-proxy-manager as both, they route requests to nextcloud.falkes.net:433 to locahost:9000// port that fpm uses
+can I make the service backends use the RP as a web server as well??
