@@ -1,0 +1,9 @@
+[Unit]
+Description=Run nextcloud app and postgres db backup hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
