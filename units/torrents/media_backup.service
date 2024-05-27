@@ -3,8 +3,6 @@ Description=Backup data dir
 
 [Service]
 Type=oneshot
-# TODO: Change this to only backup /data/torrents, different backup timers for different subdirs?
-# That way each application group controls things like maintenance mode, bucket access, etc
-ExecStart=%h/backup.sh /data
+ExecStart=%h/backup.sh /data/torrents
 Environment=RESTIC_REPOSITORY_FILE=%h/secrets/.restic_repo_media
 Environment=RESTIC_PASSWORD_FILE=%h/secrets/.restic_passwd_media
