@@ -81,7 +81,7 @@
     dest: /home/nextcloud/nextcloud_backup.sh
     group: nextcloud
     owner: nextcloud
-    mode: '700'
+    mode: '600'
     validate: bash -n %s
     content: |
       #!/usr/bin/bash
