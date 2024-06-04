@@ -13,8 +13,10 @@ deluge config for templating:
 - web.conf
 - plugins/
 
-Also look into removing the 2 sebooleans in torrents for gluetun
+^^ deluge secrets into secret manager, config into source control somehow
+use my own ssl cert from a secrets manager?
 
+Also look into removing the 2 sebooleans in torrents for gluetun
 
 May 10 18:24:15 nas gluetun[26295]: 2024-05-11T01:24:15Z INFO [wireguard] Using userspace implementation since Kernel support does not exist
 Can I somehow enable wireguard support in my kernel for performance?
@@ -22,10 +24,12 @@ Can I somehow enable wireguard support in my kernel for performance?
 Would be nice to replace ansible-vault here with podman secrets, bitwarden cli, bitwarden ansible plugin...
 Maybe just add to the install script so it calls bitwarden cli?
 
-what ports do I need to open for postgres to be reached by nextcloud/php-fm/http-proxy?
-What about on my local env, with a SQL client like dbeaver from my dev machine into the server?
+How to add in protondrive backend?
+Requires manual config, 2fa code (6 digit TOTP), rclone selfupdate, etc
+rclone config after
+Most steps have flags I can pass to cli, only hard blocker is the 2fa thing...
+bw cli can fetch 2fa totp code at runtime?
 
-How to do reverse-proxy or webserver...
-ok what if I use both in 1? Should I?
-caddy or nginx reverse-proxy-manager as both, they route requests to nextcloud.falkes.net:433 to locahost:9000// port that fpm uses
-can I make the service backends use the RP as a web server as well??
+Also, split backup (restic) and sync (pure rclone) steps for protondrive.
+Add both as scripts, time them separately so they don't conflict and shred disk IOPS.
+Maybe systemd has some idea of exclusive runs in unit files?
