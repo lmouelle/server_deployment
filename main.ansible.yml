@@ -3,6 +3,7 @@
   hosts: all
 
   vars_files:
+    # Use this instead of the hardcoding I'm doing
     - config.ansible.yml
 
   pre_tasks:
@@ -16,12 +17,17 @@
           # so gluetun can run truly rootless
           - python3-libselinux
           - python3-libsemanage
+          # This is obviously required to make everything work
           - podman
+          # This is the webui plugin, just for personal usage
           - cockpit-podman
           # This one contains machinectl, mostly for my own debugging
           - systemd-container
           # For host backup and restore
           - restic
+           # fedora repos have old rclone version, run rclone selfupdate after install for v1.66.0+ with protondrive
+           # requires I run rclone config after to add proton backend, can this be scripted with a config and auth file?
+          - rclone
         state: present
 
   tasks:
