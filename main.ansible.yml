@@ -36,7 +36,6 @@
 
     - name: Core logic to create all users and containers
       ansible.builtin.include_tasks: tasks/users.ansible.yml
-      loop:
-        - torrents
+      loop: "{{ users }}"
       loop_control:
         loop_var: username
