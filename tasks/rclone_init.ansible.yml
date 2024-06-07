@@ -1,0 +1,13 @@
+---
+
+- name: Create rclone config for proton remote backend
+  become: true
+  become_user: "{{ username }}"
+  environment:
+    RCLONE_PROTONDRIVE_USERNAME: TODO from bitwarden ansible
+    RCLONE_PROTONDRIVE_PASSWORD: TODO from bitwarden ansible
+    RCLONE_PROTONDRIVE_2FA: TODO from bitwarden ansible
+    RCLONE_PROTONDRIVE_DESCRIPTION: TODO from bitwarden ansible
+  ansible.builtin.command:
+    creates: ~/rclone/rclone.conf
+    cmd: "rclone config create --non-interactive proton protondrive"

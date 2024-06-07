@@ -1,0 +1,7 @@
+[Unit]
+Description=Sync data dir
+
+[Service]
+Type=oneshot
+ExecStart=flock --no-fork /tmp/proton.lock %h/sync.sh
+ExecStartPost=flock --no-fork /tmp/proton.lock rm /tmp/proton.lock

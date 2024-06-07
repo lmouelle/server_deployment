@@ -40,8 +40,11 @@
     state: true
     persistent: true
 
-- name: Core logic to create all users and containers
+- name: Assign torrents user to data group for data dir access
   ansible.builtin.include_tasks: data_group_assign.ansible.yml
+
+- name: Create proton backend for deluge state backups
+  ansible.builtin.include_tasks: rclone_init.ansible.yml
 
 - name: Ensure the gluetun container
   become: true
@@ -116,24 +119,24 @@
         [Service]
         Restart=always
 
-- name: Copy over restic backup script for systemd timers
+- name: Copy over deluge_state backup script for systemd timers
   become: true
   become_user: root
   ansible.builtin.copy:
     dest: /home/torrents/backup.sh
     group: torrents
     owner: torrents
-    mode: '600'
+    mode: '500'
     validate: bash -n %s
     content: |
       #!/usr/bin/bash
       set -euo pipefail
       export HISTCONTROL=ignorespace
       # Leading space is important here
-       export AWS_ACCESS_KEY_ID=$(cat secrets/.wasabi_access_key_id)
-       export AWS_SECRET_ACCESS_KEY=$(cat secrets/.wasabi_secret_access_key)
+       export RESTIC_REPOSITORY_FILE=~/secrets/.restic_repo_deluge_state
+       export RESTIC_PASSWORD_FILE=~/secrets/.restic_passwd_deluge_state
 
-      restic backup $1 -vvv --read-concurrency 8
+      restic backup ~/deluge_state -vvv --read-concurrency 8
 
       if ! restic check; then
           printf "Post backup check failed\n"

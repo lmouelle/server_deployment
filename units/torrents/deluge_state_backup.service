@@ -3,6 +3,4 @@ Description=Backup deluge state
 
 [Service]
 Type=oneshot
-ExecStart=%h/backup.sh %h/deluge_state
-Environment=RESTIC_REPOSITORY_FILE=%h/secrets/.restic_repo_deluge_state
-Environment=RESTIC_PASSWORD_FILE=%h/secrets/.restic_passwd_deluge_state
+ExecStart=%h/backup.sh
