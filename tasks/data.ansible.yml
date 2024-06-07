@@ -61,7 +61,7 @@
           exit 31
       fi
 
-      restic backup /data -vvv
+      restic backup {{ data_dir }} -vvv
 
       if ! restic check; then
           printf "Post backup check failed\n"
@@ -92,4 +92,4 @@
       # copy does not propogate deletes from local to remote, sync does
       # bisync is experimental and propogates deletes from remote to local
       # copy for now while testing, consider sync if I start to accumulate garbage
-      rclone copy proton:nas-data -vv
+      rclone copy {{ backup_remote_name }}:nas-data -vv

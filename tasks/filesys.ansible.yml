@@ -14,7 +14,7 @@
   become: true
   become_user: root
   ansible.builtin.file:
-    path: "/data" # TODO put into some config file?
+    path: "{{ data_dir }}"
     group: data
     mode: '770'
     recurse: true
@@ -59,7 +59,7 @@
 
       [Service]
       Type=simple
-      ExecStart=/bin/btrfs scrub start -Bd /data
+      ExecStart=/bin/btrfs scrub start -Bd {{ data_dir }}
       KillSignal=SIGINT
       IOSchedulingClass=idle
       CPUSchedulingPolicy=idle

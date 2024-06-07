@@ -1,3 +1,7 @@
+data_dir: /data
+
+backup_remote_name: proton
+
 users:
   - torrents
   # - frontdoor

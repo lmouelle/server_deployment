@@ -10,4 +10,4 @@
     RCLONE_PROTONDRIVE_DESCRIPTION: TODO from bitwarden ansible
   ansible.builtin.command:
     creates: ~/rclone/rclone.conf
-    cmd: "rclone config create --non-interactive proton protondrive"
+    cmd: "rclone config create --non-interactive {{ backup_remote_name }} protondrive"
