@@ -1,7 +1,7 @@
 ---
 
 # This will have caddy/apache/nginx do routing/port forwarding subdomains to
-# locahost:58143 or any port from nextcloud.falkes.net
+# locahost:58143 or any port from nextcloud.mydomain.com
 
 - name: Open host firewall ports for caddy frontdoor
   become: true
