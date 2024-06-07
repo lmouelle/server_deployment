@@ -7,6 +7,10 @@ set -euo pipefail
 
 export HISTCONTROL=ignorespace
 
+python -m venv bitwarden_sdk_venv
+source bitwarden_sdk_venv/bin/activate
+pip install bitwarden-sdk
+
 ansible-galaxy collection install -r requirements.ansible.yml
 
 # Run the playbook now. Preceding space is important to hide password from process history
