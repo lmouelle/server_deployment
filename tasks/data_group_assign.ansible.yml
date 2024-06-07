@@ -9,14 +9,14 @@
 
 - name: Fetch data group gid
   register: data_group_get_result
-  changed_when: true
+  changed_when: user_update_result.changed
   ansible.builtin.group:
     name: data
 
 - name: "Assign data group subgids to user {{ username }}"
   become: true
   become_user: root
-  changed_when: true
+  changed_when: user_update_result.changed
   ansible.builtin.command:
     cmd: "usermod {{ username }} --add-subgids {{ data_group_get_result.gid }}-{{ data_group_get_result.gid }}"
 
