@@ -30,7 +30,7 @@
     group: root
     owner: root
     dest: /etc/systemd/system/btrfs-scrub.timer
-    mode: '777'
+    mode: '600'
     content: |
       [Unit]
       Description=Monthly scrub btrfs filesystem, verify block checksums
@@ -50,7 +50,7 @@
   ansible.builtin.copy:
     group: root
     owner: root
-    mode: '777'
+    mode: '600'
     dest: /etc/systemd/system/btrfs-scrub.service
     content: |
       [Unit]
