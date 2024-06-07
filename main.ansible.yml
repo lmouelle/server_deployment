@@ -25,9 +25,8 @@
           - systemd-container
           # For host backup and restore
           - restic
-           # fedora repos have old rclone version, run rclone selfupdate after install for v1.66.0+ with protondrive
-           # requires I run rclone config after to add proton backend, can this be scripted with a config and auth file?
-          - rclone
+           # fedora repos have old rclone version, use this until fedora repos catch up
+          - https://downloads.rclone.org/v1.66.0/rclone-v1.66.0-linux-amd64.rpm
         state: present
 
   tasks:
