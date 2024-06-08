@@ -1,6 +1,69 @@
 ---
 
-# This user only exists ATM to run a backup and sync on the /data dir
+# TODO: Ensure that /data mountpoint exists and is a btrfs volume with the devices I expect by UUID?
+
+- name: Make data dir accessible to containers
+  become: true
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ data_dir }}"
+    group: data
+    mode: '770'
+    recurse: true
+    setype: container_file_t
+    # TODO: Do i want this to be true? Seems like way to shoot myself in the foot
+    # If I setup *arr suite of apps I may need to make this true
+    follow: false
+
+- name: Create systemd timer for btrfs scrub
+  become: true
+  become_user: root
+  ansible.builtin.copy:
+    group: root
+    owner: root
+    dest: /etc/systemd/system/btrfs-scrub.timer
+    mode: '600'
+    content: |
+      [Unit]
+      Description=Monthly scrub btrfs filesystem, verify block checksums
+      Documentation=man:btrfs-scrub
+
+      [Timer]
+      # first saturday each month
+      OnCalendar=Sat *-*-1..7 3:00:00
+      RandomizedDelaySec=10min
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Create systemd service for btrfs scrub
+  become: true
+  become_user: root
+  ansible.builtin.copy:
+    group: root
+    owner: root
+    mode: '600'
+    dest: /etc/systemd/system/btrfs-scrub.service
+    content: |
+      [Unit]
+      Description=Scrub btrfs filesystem, verify block checksums
+      Documentation=man:btrfs-scrub
+
+      [Service]
+      Type=simple
+      ExecStart=/bin/btrfs scrub start -Bd {{ data_dir }}
+      KillSignal=SIGINT
+      IOSchedulingClass=idle
+      CPUSchedulingPolicy=idle
+
+- name: Enable systemd timer for btrfs scrub
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: btrfs-scrub.timer
+    state: started
+    enabled: true
+    scope: system
 
 
 # Download and configure the bitwarden CLI program
