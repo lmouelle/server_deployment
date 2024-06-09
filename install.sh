@@ -6,6 +6,7 @@ set -euo pipefail
 # Sadly bitwarden module has some issues, this prototype that only uses ansible-vault is fine for now
 
 export HISTCONTROL=ignorespace
+ export BWS_ACCESS_TOKEN=$(cat secrets/.bw_access_token)
 
 python -m venv bitwarden_sdk_venv
 source bitwarden_sdk_venv/bin/activate

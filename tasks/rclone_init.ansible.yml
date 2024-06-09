@@ -4,10 +4,9 @@
   become: true
   become_user: "{{ username }}"
   environment:
-    RCLONE_PROTONDRIVE_USERNAME: TODO from bitwarden ansible
-    RCLONE_PROTONDRIVE_PASSWORD: TODO from bitwarden ansible
-    RCLONE_PROTONDRIVE_2FA: TODO from bitwarden ansible
-    RCLONE_PROTONDRIVE_DESCRIPTION: TODO from bitwarden ansible
+    RCLONE_PROTONDRIVE_USERNAME: "{{ lookup('bitwarden.secrets.lookup', 'dacbc584-b851-4ae2-a1de-b18a004ba47f') }}"
+    RCLONE_PROTONDRIVE_PASSWORD: "{{ lookup('bitwarden.secrets.lookup', '99471501-fcd3-408b-bf12-b18a004bc1cf') }}"
+    RCLONE_PROTONDRIVE_2FA: "{{ lookup('bitwarden.secrets.lookup', 'fb93e5ea-23b0-4e31-8d61-b18a004b8e77') }}"
   ansible.builtin.command:
-    creates: ~/rclone/rclone.conf
+    creates: ~/.config/rclone/rclone.conf
     cmd: "rclone config create --non-interactive {{ backup_remote_name }} protondrive"
