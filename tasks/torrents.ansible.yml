@@ -59,7 +59,7 @@
     device:
       - /dev/net/tun
     volume:
-      - "/home/torrents/secrets/.wg0.conf:/gluetun/wireguard/wg0.conf:Z,noexec"
+      - "~/secrets/.wg0.conf:/gluetun/wireguard/wg0.conf:Z,noexec"
     env:
       VPN_SERVICE_PROVIDER: custom
       VPN_TYPE: wireguard
@@ -93,7 +93,7 @@
     groups:
       - data
     volume:
-      - "/home/torrents/deluge_state/:/config:Z"
+      - "~/deluge_state/:/config:Z"
       - "/data/torrents:/downloads:z,noexec"
     env:
       TZ: America/Los_Angeles
@@ -123,7 +123,7 @@
   become: true
   become_user: root
   ansible.builtin.copy:
-    dest: /home/torrents/backup.sh
+    dest: ~/backup.sh
     group: torrents
     owner: torrents
     mode: '500'

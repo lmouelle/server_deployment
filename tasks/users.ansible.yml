@@ -3,6 +3,7 @@
 - name: "Create user {{ username }}"
   become: true
   become_user: root
+  register: user_add_result
   ansible.builtin.user:
     name: "{{ username }}"
     state: present
@@ -31,7 +32,7 @@
   become_user: "{{ username }}"
   ansible.builtin.copy:
     src: "units/{{ username }}/"
-    dest: "/home/{{ username }}/.config/systemd/user/"
+    dest: "{{ user_add_result.home }}/.config/systemd/user/"
     group: "{{ username }}"
     owner: "{{ username }}"
     mode: '400'
@@ -46,7 +47,7 @@
   register: find_units_result
   changed_when: true
   ansible.builtin.find:
-    path: "/home/{{ username }}/.config/"
+    path: "{{ user_add_result.home }}/.config/"
     use_regex: true
     recurse: true
     patterns:
