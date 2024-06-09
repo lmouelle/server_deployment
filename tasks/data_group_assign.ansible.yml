@@ -1,3 +1,5 @@
+---
+
 - name: "Assign data group to user {{ username }}"
   become: true
   become_user: root
