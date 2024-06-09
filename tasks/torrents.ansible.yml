@@ -43,9 +43,6 @@
 - name: Assign torrents user to data group for data dir access
   ansible.builtin.include_tasks: data_group_assign.ansible.yml
 
-- name: Create proton backend for deluge state backups
-  ansible.builtin.include_tasks: rclone_init.ansible.yml
-
 - name: Ensure the gluetun container
   become: true
   become_user: torrents
