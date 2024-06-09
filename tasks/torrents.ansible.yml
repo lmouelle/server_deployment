@@ -53,7 +53,6 @@
     image: docker.io/qmcgaw/gluetun:v3.38
     state: quadlet
     name: gluetun
-    quadlet_dir: "/home/torrents/.config/containers/systemd"
     cap_add:
       - NET_ADMIN
     device:
@@ -89,7 +88,6 @@
     name: deluge
     state: quadlet
     image: docker.io/linuxserver/deluge:2.1.1
-    quadlet_dir: "/home/torrents/.config/containers/systemd"
     groups:
       - data
     volume:

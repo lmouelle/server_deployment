@@ -10,7 +10,6 @@
     name: postgres
     state: quadlet
     image: docker.io/library/postgres:16.3
-    quadlet_dir: /home/nextcloud/.config/containers/systemd
     env:
       POSTGRES_DB_FILE: /run/secrets/.postgres_db_nextcloud_name
       POSTGRES_USER_FILE: /run/secrets/.postgres_user_nextcloud_name
@@ -33,7 +32,6 @@
     name: redis
     image: docker.io/library/redis:alpine
     state: quadlet
-    quadlet_dir: /home/nextcloud/.config/containers/systemd
     quadlet_options:
       - |
         [Install]
