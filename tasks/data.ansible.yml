@@ -1,71 +1,5 @@
 ---
 
-# TODO: Ensure that /data mountpoint exists and is a btrfs volume with the devices I expect by UUID?
-
-- name: Make data dir accessible to containers
-  become: true
-  become_user: root
-  ansible.builtin.file:
-    path: "{{ data_dir }}"
-    group: data
-    mode: '770'
-    recurse: true
-    setype: container_file_t
-    # TODO: Do i want this to be true? Seems like way to shoot myself in the foot
-    # If I setup *arr suite of apps I may need to make this true
-    follow: false
-
-- name: Create systemd timer for btrfs scrub
-  become: true
-  become_user: root
-  ansible.builtin.copy:
-    group: root
-    owner: root
-    dest: /etc/systemd/system/btrfs-scrub.timer
-    mode: '600'
-    content: |
-      [Unit]
-      Description=Monthly scrub btrfs filesystem, verify block checksums
-      Documentation=man:btrfs-scrub
-
-      [Timer]
-      # first saturday each month
-      OnCalendar=Sat *-*-1..7 3:00:00
-      RandomizedDelaySec=10min
-
-      [Install]
-      WantedBy=timers.target
-
-- name: Create systemd service for btrfs scrub
-  become: true
-  become_user: root
-  ansible.builtin.copy:
-    group: root
-    owner: root
-    mode: '600'
-    dest: /etc/systemd/system/btrfs-scrub.service
-    content: |
-      [Unit]
-      Description=Scrub btrfs filesystem, verify block checksums
-      Documentation=man:btrfs-scrub
-
-      [Service]
-      Type=simple
-      ExecStart=/bin/btrfs scrub start -Bd {{ data_dir }}
-      KillSignal=SIGINT
-      IOSchedulingClass=idle
-      CPUSchedulingPolicy=idle
-
-- name: Enable systemd timer for btrfs scrub
-  become: true
-  become_user: root
-  ansible.builtin.systemd_service:
-    name: btrfs-scrub.timer
-    state: started
-    enabled: true
-    scope: system
-
-
 # Download and configure the bitwarden CLI program
 # This only exists to pull secrets on user creation/setup that
 # require refreshes like TOTP 2fa. In all other cases, prefer
@@ -98,8 +32,26 @@
 
 # TODO: Initialize the target repos if they do not exist
 
-- name: Create proton backend for data
-  ansible.builtin.include_tasks: rclone_init.ansible.yml
+# TODO: Containerize restic, so I can just use podman secrets flow everywhere
+# Make systemd timer but make the associated service for the timer a quadlet .service file
+# The quadlet's entry point is restic check, restic backup or restic forget
+# Mount data dir readonly, with small z perms and noexec
+# Have my timer run each entrypoint as a diff .service/quadlet that run sequentially, depending on prev success?
+# Or... my timer triggers a backup_script.service, which runs podman exec ... $entrypoint within the script?
+# Former is more complicated and gives me nothing but failures for distinct stages in systemctl --failed
+# Also a second timer to check if proton/rclone config is stale and needs to be refreshed. Or refresh unconditionally every N hours?
+
+- name: Create rclone config for proton remote backend
+  become: true
+  vars_files: secrets/secret_ids.ansible.yml
+  become_user: "{{ username }}"
+  environment:
+    RCLONE_PROTONDRIVE_USERNAME: "{{ lookup('bitwarden.secrets.lookup', proton_passwd) }}"
+    RCLONE_PROTONDRIVE_PASSWORD: "{{ lookup('bitwarden.secrets.lookup', proton_username) }}"
+    RCLONE_PROTONDRIVE_2FA: "{{ lookup('bitwarden.secrets.lookup', 'fb93e5ea-23b0-4e31-8d61-b18a004b8e77') }}"
+  ansible.builtin.command:
+    creates: ~/.config/rclone/rclone.conf
+    cmd: "rclone config create --non-interactive {{ backup_remote_name }} protondrive"
 
 - name: Generate script for data backup
   become: true
@@ -118,6 +70,7 @@
       # Leading space matters here
        export RESTIC_REPOSITORY_FILE=secrets/.restic_repo_data
        export RESTIC_PASSWORD_FILE=secrets/.restic_passwd_data
+       export AWS_ACCESS_KEY_ID=
 
       if ! restic check; then
           printf "Pre backup check failed\n"
