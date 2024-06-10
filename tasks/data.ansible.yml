@@ -32,7 +32,7 @@
   vars:
     configs:
       backup_data:
-        entrypoint: "backup /data -v"
+        entrypoint: "backup {{ data_dir }} -v"
         quadlet_opt: "Before=post_backup_check_data"
       post_backup_check_data:
         entrypoint: check
@@ -95,4 +95,4 @@
       # copy does not propogate deletes from local to remote, sync does
       # bisync is experimental and propogates deletes from remote to local
       # copy for now while testing, consider sync if I start to accumulate garbage
-      rclone copy {{ backup_remote_name }}:nas-data -vv
+      rclone copy {{ data_dir }} {{ backup_remote_name }}:nas-data -vv
