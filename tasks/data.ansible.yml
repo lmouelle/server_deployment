@@ -76,23 +76,52 @@
       - |
         [Install]
         WantedBy=default.target
+        Type=oneshot
+        RemainAfterExit=yes
         {{ item.value.quadlet_opt }}
 
-- name: Generate script for data sync
+- name: Generate timer for data sync
   become: true
   become_user: root
   ansible.builtin.copy:
-    dest: "~/sync.sh"
+    dest: "~/.config/systemd/user/data_sync.timer"
     group: "{{ username }}"
     owner: "{{ username }}"
-    mode: '500'
-    validate: bash -n %s
+    mode: '600'
     content: |
-      #!/usr/bin/bash
-      set -euo pipefail
-      export HISTCONTROL=ignorespace
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
 
-      # copy does not propogate deletes from local to remote, sync does
-      # bisync is experimental and propogates deletes from remote to local
-      # copy for now while testing, consider sync if I start to accumulate garbage
-      rclone copy {{ data_dir }} {{ backup_remote_name }}:nas-data -vv
+      [Install]
+      WantedBy=timers.target
+
+- name: Generate service for data sync
+  become: true
+  become_user: root
+  ansible.builtin.copy:
+    dest: "~/.config/systemd/user/data_sync.service"
+    group: "{{ username }}"
+    owner: "{{ username }}"
+    mode: '600'
+    content: |
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=rclone copy {{ data_dir }} {{ backup_remote_name }}:nas-data -v
+
+- name: Generate timer for data backup
+  become: true
+  become_user: root
+  ansible.builtin.copy:
+    dest: "~/.config/systemd/user/backup_data.timer"
+    group: "{{ username }}"
+    owner: "{{ username }}"
+    mode: '600'
+    content: |
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
