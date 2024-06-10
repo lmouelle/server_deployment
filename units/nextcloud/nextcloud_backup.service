@@ -1,8 +1,0 @@
-[Unit]
-Description=Backup nextcloud and postgres
-
-[Service]
-Type=oneshot
-ExecStart=%h/home/nextcloud/nextcloud_backup.sh
-Environment=RESTIC_REPOSITORY_FILE=%h/secrets/restic/.restic_repo_nextcloud
-Environment=RESTIC_PASSWORD_FILE=%h/secrets/restic/.restic_passwd_nextcloud
