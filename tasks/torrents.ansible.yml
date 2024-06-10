@@ -43,26 +43,6 @@
 - name: Assign torrents user to data group for data dir access
   ansible.builtin.include_tasks: data_group_assign.ansible.yml
 
-- name: Ensure backup container
-  become: true
-  become_user: torrents
-  containers.podman.podman_container:
-    image: ghcr.io/restic/restic
-    state: quadlet
-    hostname: "{{ inventory_hostname }}"
-    secrets:
-      - "wasabi_deluge_state_repo,type=env,target=RESTIC_REPOSITORY"
-      - "restic_passwd_deluge_state,type=env,target=RESTIC_PASSWORD"
-      - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
-      - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
-    volume: "~/deluge_state/:Z,ro,noexec"
-    quadlet_options:
-      - |
-        [Install]
-        WantedBy=default.target
-        [Service]
-        Restart=always
-
 - name: Ensure the gluetun container
   become: true
   become_user: torrents
@@ -107,8 +87,8 @@
     groups:
       - data
     volume:
-      - "~/deluge_state/:/config:Z"
-      - "/data/torrents:/downloads:z,noexec"
+      - "~/deluge_state/:/config:z"
+      - "{{ data_dir }}/torrents:/downloads:z,noexec"
     env:
       TZ: America/Los_Angeles
       DELUGE_LOGLEVEL: info
@@ -132,34 +112,3 @@
         WantedBy=default.target
         [Service]
         Restart=always
-
-- name: Copy over deluge_state backup script for systemd timers
-  become: true
-  become_user: root
-  ansible.builtin.copy:
-    dest: ~/backup.sh
-    group: torrents
-    owner: torrents
-    mode: '500'
-    validate: bash -n %s
-    content: |
-      #!/usr/bin/bash
-      set -euo pipefail
-      export HISTCONTROL=ignorespace
-      # Leading space is important here
-       export RESTIC_REPOSITORY_FILE=~/secrets/.restic_repo_deluge_state
-       export RESTIC_PASSWORD_FILE=~/secrets/.restic_passwd_deluge_state
-
-      restic backup ~/deluge_state -vvv --read-concurrency 8
-
-      if ! restic check; then
-          printf "Post backup check failed\n"
-          exit 63
-      fi
-
-      restic forget --keep-daily 7 --keep-hourly 7 --keep-weekly 7 --prune
-
-      if ! restic check; then
-          printf "Post prune check failed\n"
-          exit 127
-      fi

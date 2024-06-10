@@ -1,37 +1,5 @@
 ---
 
-# Download and configure the bitwarden CLI program
-# This only exists to pull secrets on user creation/setup that
-# require refreshes like TOTP 2fa. In all other cases, prefer
-# one time secrets setup on deployment within ansible with ansible-vault
-# or the ansible-bitwarden plugin. I may not need TOTP 2fa refreshes,
-# so disabling this for now. Will try just initial setup for rclone
-
-# - name: Get the bw cli program
-#   become: true
-#   become_user: "{{ username }}"
-#   ansible.builtin.get_url:
-#     url: https://vault.bitwarden.com/download/?app=cli&platform=linux
-#     dest: "~/.local/bin/bw"
-#     mode: '500'
-#     decompress: true
-#     group: "{{ username }}"
-#     owner: "{{ username }}"
-
-# - name: Setup bw CLI
-#   become: true
-#   become_user: "{{ username }}"
-#   register: bw_cli_login_result
-#   environment:
-#     # TODO: Set these env vars on ansible-deploy for automated auth
-#     BW_CLIENTID:
-#     BW_CLIENTSECRET:
-#   ansible.builtin.command:
-#     cmd: "bw --nointeraction --raw login"
-#     creates: "~/.config/Bitwarden CLI/data.json"
-
-# TODO: Initialize the target repos if they do not exist
-
 # TODO: Containerize restic, so I can just use podman secrets flow everywhere
 # Make systemd timer but make the associated service for the timer a quadlet .service file
 # The quadlet's entry point is restic check, restic backup or restic forget
@@ -63,18 +31,18 @@
   become_user: torrents
   vars:
     configs:
-      backup:
-        entrypoint: "backup /data -vv"
-        quadlet_opt: "Before=post_backup_check"
-      post_backup_check:
+      backup_data:
+        entrypoint: "backup /data -v"
+        quadlet_opt: "Before=post_backup_check_data"
+      post_backup_check_data:
         entrypoint: check
-        quadlet_opt: "After=backup"
-      forget:
+        quadlet_opt: "After=backup_data"
+      forget_data:
         entrypoint: "forget --keep-daily 7 --keep-hourly 48 --prune"
-        quadlet_opt: "After=post_backup_check"
-      post_forget_check:
+        quadlet_opt: "After=post_backup_check_data"
+      post_forget_check_data:
         entrypoint: check
-        quadlet_opt: "After=forget"
+        quadlet_opt: "After=forget_data"
   loop: "{{ lookup('ansible.builtin.dict', configs) }}"
   containers.podman.podman_container:
     name: "{{ item.key }}"
@@ -93,6 +61,22 @@
         [Install]
         WantedBy=default.target
         {{ item.value.quadlet_opt }}
+
+- name: Create the restic repo if it does not exist
+  become: true
+  become_user: "{{ username }}"
+  register: restic_init_result
+  failed_when: TODO Insert not failed if this repo already exists
+  containers.podman.podman_container:
+    image: ghcr.io/restic/restic
+    name: init_data
+    state: started
+    secrets:
+      - "wasabi_media_repo,type=env,target=RESTIC_REPOSITORY"
+      - "restic_passwd_media,type=env,target=RESTIC_PASSWORD"
+      - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
+      - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
+    entrypoint: "init"
 
 - name: Generate script for data sync
   become: true

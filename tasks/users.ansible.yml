@@ -1,13 +1,11 @@
 ---
 
-- name: "Create user {{ username }}"
+- name: "Create new user {{ username }}"
   become: true
   become_user: root
-  register: user_add_result
-  ansible.builtin.user:
-    name: "{{ username }}"
-    state: present
-    umask: '077'
+  ansible.builtin.command:
+    creates: "{{ data_dir }}/home/{{ username }}"
+    cmd: "useradd {{ username }} --home-dir {{ data_dir }}/home/{{ username }} --add-subids-for-system --create-home --system --key UMASK=077"
 
 - name: "Load secrets for new user named {{ username }}"
   no_log: true
@@ -37,7 +35,7 @@
   become_user: "{{ username }}"
   ansible.builtin.copy:
     src: "units/{{ username }}/"
-    dest: "{{ user_add_result.home }}/.config/systemd/user/"
+    dest: "{{ data_dir }}/home/{{ username }}/.config/systemd/user/"
     group: "{{ username }}"
     owner: "{{ username }}"
     mode: '400'
@@ -52,7 +50,7 @@
   register: find_units_result
   changed_when: true
   ansible.builtin.find:
-    path: "{{ user_add_result.home }}/.config/"
+    path: "{{ data_dir }}/home/{{ username }}/.config/"
     use_regex: true
     recurse: true
     patterns:
