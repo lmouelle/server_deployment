@@ -30,17 +30,6 @@
     cmd: "loginctl enable-linger {{ username }} --no-ask-password --no-pager"
     creates: "/var/lib/systemd/linger/{{ username }}"
 
-- name: "Copy over unit files for user {{ username }}"
-  become: true
-  become_user: "{{ username }}"
-  ansible.builtin.copy:
-    src: "dotfiles/{{ username }}/"
-    dest: "{{ data_dir }}/home/{{ username }}/"
-    group: "{{ username }}"
-    owner: "{{ username }}"
-    mode: '400'
-    directory_mode: '500'
-
 - name: "Arrange quadlets, config, container specific permissions, etc for {{ username }}"
   ansible.builtin.include_tasks: "{{ username }}.ansible.yml"
 

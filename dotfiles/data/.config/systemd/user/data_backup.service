@@ -1,7 +1,0 @@
-[Unit]
-Description=Backup data dir
-
-[Service]
-Type=oneshot
-ExecStart=flock --no-fork /tmp/proton.lock %h/backup.sh
-ExecStartPost=flock --no-fork /tmp/proton.lock rm /tmp/proton.lock
