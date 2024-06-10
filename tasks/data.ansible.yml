@@ -26,6 +26,22 @@
     creates: ~/.config/rclone/rclone.conf
     cmd: "rclone config create --non-interactive {{ backup_remote_name }} protondrive"
 
+- name: Create the restic repo if it does not exist
+  become: true
+  become_user: "{{ username }}"
+  register: restic_init_result
+  failed_when: "'config file already exists' not in restic_init_result.stdout"
+  containers.podman.podman_container:
+    image: ghcr.io/restic/restic
+    name: init_data
+    state: started
+    secrets:
+      - "wasabi_media_repo,type=env,target=RESTIC_REPOSITORY"
+      - "restic_passwd_media,type=env,target=RESTIC_PASSWORD"
+      - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
+      - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
+    entrypoint: "init"
+
 - name: Ensure backup container
   become: true
   become_user: torrents
@@ -61,22 +77,6 @@
         [Install]
         WantedBy=default.target
         {{ item.value.quadlet_opt }}
-
-- name: Create the restic repo if it does not exist
-  become: true
-  become_user: "{{ username }}"
-  register: restic_init_result
-  failed_when: "'config file already exists' not in restic_init_result.stdout"
-  containers.podman.podman_container:
-    image: ghcr.io/restic/restic
-    name: init_data
-    state: started
-    secrets:
-      - "wasabi_media_repo,type=env,target=RESTIC_REPOSITORY"
-      - "restic_passwd_media,type=env,target=RESTIC_PASSWORD"
-      - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
-      - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
-    entrypoint: "init"
 
 - name: Generate script for data sync
   become: true
