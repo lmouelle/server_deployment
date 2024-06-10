@@ -54,7 +54,7 @@
       - "restic_passwd_media,type=env,target=RESTIC_PASSWORD"
       - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
       - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
-    volume: "{{ data_dir }}:/data:Z,ro,noexec"
+    volume: "{{ data_dir }}:/data:z,ro,noexec"
     entrypoint: "{{ item.value.entrypoint }}"
     quadlet_options:
       - |
