@@ -4,5 +4,6 @@ backup_remote_name: proton
 
 users:
   - torrents
+  - data
   # - frontdoor
   # - nextcloud

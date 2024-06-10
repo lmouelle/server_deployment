@@ -9,16 +9,21 @@
     state: present
     umask: '077'
 
-- name: "Copy any secrets to new user named {{ username }}"
-  become: true
-  become_user: "{{ username }}"
-  ansible.builtin.copy:
-    dest: "/home/{{ username }}/secrets/"
-    mode: '400'
-    directory_mode: '500'
-    src: secrets/{{ username }}/
-    group: "{{ username }}"
-    owner: "{{ username }}"
+- name: "Load secrets for new user named {{ username }}"
+  no_log: true
+  ansible.builtin.include_vars:
+    file: "{{ username }}.secrets.yml"
+    name: secrets
+
+- name: "Create podman secrets for new user named {{ username }}"
+  no_log: true
+  loop: "{{ secrets }}"
+  containers.podman.podman_secret:
+    name: "{{ item.key }}"
+    data: "{{ item.value }}"
+    state: present
+    # TODO: Move towards gpg encrypted driver?
+    # driver:
 
 - name: "Set user to linger on login {{ username }}"
   become: true

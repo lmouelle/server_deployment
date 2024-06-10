@@ -43,6 +43,26 @@
 - name: Assign torrents user to data group for data dir access
   ansible.builtin.include_tasks: data_group_assign.ansible.yml
 
+- name: Ensure backup container
+  become: true
+  become_user: torrents
+  containers.podman.podman_container:
+    image: ghcr.io/restic/restic
+    state: quadlet
+    hostname: "{{ inventory_hostname }}"
+    secrets:
+      - "wasabi_deluge_state_repo,type=env,target=RESTIC_REPOSITORY"
+      - "restic_passwd_deluge_state,type=env,target=RESTIC_PASSWORD"
+      - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
+      - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
+    volume: "~/deluge_state/:Z,ro,noexec"
+    quadlet_options:
+      - |
+        [Install]
+        WantedBy=default.target
+        [Service]
+        Restart=always
+
 - name: Ensure the gluetun container
   become: true
   become_user: torrents
@@ -54,8 +74,8 @@
       - NET_ADMIN
     device:
       - /dev/net/tun
-    volume:
-      - "~/secrets/.wg0.conf:/gluetun/wireguard/wg0.conf:Z,noexec"
+    secrets:
+      - "proton_wireguard_config,target=/gluetun/wireguard/wg.conf"
     env:
       VPN_SERVICE_PROVIDER: custom
       VPN_TYPE: wireguard
@@ -73,7 +93,6 @@
       - 8112:8112
       # 6881 is data transfer/tracker announce
       - 6881:6881
-
       - 6881:6881/udp
       # 58846 is deluge GTK UI
       - 58846:58846

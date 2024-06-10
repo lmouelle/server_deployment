@@ -41,6 +41,11 @@
 # Former is more complicated and gives me nothing but failures for distinct stages in systemctl --failed
 # Also a second timer to check if proton/rclone config is stale and needs to be refreshed. Or refresh unconditionally every N hours?
 
+# Make all users system users this time with no login shell and a home dir on /data drive?
+# Then make this backup service in the data user just backup the entire /data drive, including their home dirs
+# which will include any state. Some secrets will be in the backups (deluge state includes auth file as is) but that's fine,
+# the backups are encrypted.
+
 - name: Create rclone config for proton remote backend
   become: true
   vars_files: secrets/secret_ids.ansible.yml
@@ -53,43 +58,41 @@
     creates: ~/.config/rclone/rclone.conf
     cmd: "rclone config create --non-interactive {{ backup_remote_name }} protondrive"
 
-- name: Generate script for data backup
+- name: Ensure backup container
   become: true
-  become_user: root
-  ansible.builtin.copy:
-    dest: "~/backup.sh"
-    group: "{{ username }}"
-    owner: "{{ username }}"
-    mode: '500'
-    validate: bash -n %s
-    content: |
-      #!/usr/bin/bash
-      set -euo pipefail
-      export HISTCONTROL=ignorespace
-
-      # Leading space matters here
-       export RESTIC_REPOSITORY_FILE=secrets/.restic_repo_data
-       export RESTIC_PASSWORD_FILE=secrets/.restic_passwd_data
-       export AWS_ACCESS_KEY_ID=
-
-      if ! restic check; then
-          printf "Pre backup check failed\n"
-          exit 31
-      fi
-
-      restic backup {{ data_dir }} -vvv
-
-      if ! restic check; then
-          printf "Post backup check failed\n"
-          exit 63
-      fi
-
-      restic forget --keep-daily 7 --keep-hourly 7 --keep-weekly 7 --prune
-
-      if ! restic check; then
-          printf "Post prune check failed\n"
-          exit 127
-      fi
+  become_user: torrents
+  vars:
+    configs:
+      backup:
+        entrypoint: "backup /data -vv"
+        quadlet_opt: "Before=post_backup_check"
+      post_backup_check:
+        entrypoint: check
+        quadlet_opt: "After=backup"
+      forget:
+        entrypoint: "forget --keep-daily 7 --keep-hourly 48 --prune"
+        quadlet_opt: "After=post_backup_check"
+      post_forget_check:
+        entrypoint: check
+        quadlet_opt: "After=forget"
+  loop: "{{ lookup('ansible.builtin.dict', configs) }}"
+  containers.podman.podman_container:
+    name: "{{ item.key }}"
+    image: ghcr.io/restic/restic
+    state: quadlet
+    hostname: "{{ inventory_hostname }}"
+    secrets:
+      - "wasabi_media_repo,type=env,target=RESTIC_REPOSITORY"
+      - "restic_passwd_media,type=env,target=RESTIC_PASSWORD"
+      - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
+      - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
+    volume: "{{ data_dir }}:/data:Z,ro,noexec"
+    entrypoint: "{{ item.value.entrypoint }}"
+    quadlet_options:
+      - |
+        [Install]
+        WantedBy=default.target
+        {{ item.value.quadlet_opt }}
 
 - name: Generate script for data sync
   become: true
