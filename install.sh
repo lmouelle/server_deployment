@@ -16,7 +16,7 @@ ansible-galaxy collection install -r requirements.ansible.yml
 
 # Run the playbook now. Preceding space is important to hide password from process history
 # --syntax-check and --check for validating
- ansible-playbook --inventory inventory.ini main.ansible.yml --ask-become-pass --vault-password-file secrets/.vault_passwd
+ ansible-playbook --inventory inventory.ini main.ansible.yml --ask-become-pass
 
 # After install and setup, some remaining tasks that I have not/can not automate:
 # Set allow_remote to true for deluge core.conf, https only to true for web conf, 
