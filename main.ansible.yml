@@ -27,10 +27,6 @@
           - cockpit-podman
           # This one contains machinectl, mostly for my own debugging
           - systemd-container
-          # For host backup and restore
-          - restic
-           # fedora repos have old rclone version, use this until fedora repos catch up
-          - https://downloads.rclone.org/v1.66.0/rclone-v1.66.0-linux-amd64.rpm
         state: present
 
   tasks:
