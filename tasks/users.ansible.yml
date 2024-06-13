@@ -7,7 +7,18 @@
   failed_when: "create_user_result.rc != 9"
   ansible.builtin.command:
     creates: "{{ data_dir }}/home/{{ username }}"
-    cmd: "useradd {{ username }} --home-dir {{ data_dir }}/home/{{ username }} --add-subids-for-system --create-home --system --key UMASK=077"
+    argv:
+      - useradd
+      - "{{ username }}"
+      - --home-dir
+      - "{{ data_dir }}/home/{{ username }}"
+      - --add-subids-for-system
+      - --create-home
+      - --system
+      - --shell
+      - /sbin/nologin
+      - --key
+      - UMASK=077
 
 - name: "Load secrets for new user named {{ username }}"
   no_log: true
