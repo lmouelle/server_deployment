@@ -6,6 +6,10 @@
     # Use this instead of the hardcoding I'm doing
     - config.ansible.yml
 
+  vars_prompt:
+    - name: raw_proton_code
+      prompt: Enter the proton 2fa
+
   pre_tasks:
     - name: Install dnf packages for nas
       become_user: root

@@ -2,6 +2,8 @@ data_dir: /data
 
 backup_remote_name: proton
 
+backup_sync_container_name: nas-data
+
 users:
   - torrents
   - data

@@ -14,17 +14,37 @@
 # which will include any state. Some secrets will be in the backups (deluge state includes auth file as is) but that's fine,
 # the backups are encrypted.
 
-- name: Create rclone config for proton remote backend
+- name: Define 2fa secret in podman
+  no_log: true
   become: true
-  vars_files: secrets/secret_ids.ansible.yml
   become_user: "{{ username }}"
-  environment:
-    RCLONE_PROTONDRIVE_USERNAME: "{{ lookup('bitwarden.secrets.lookup', proton_passwd) }}"
-    RCLONE_PROTONDRIVE_PASSWORD: "{{ lookup('bitwarden.secrets.lookup', proton_username) }}"
-    RCLONE_PROTONDRIVE_2FA: "{{ lookup('bitwarden.secrets.lookup', 'fb93e5ea-23b0-4e31-8d61-b18a004b8e77') }}"
-  ansible.builtin.command:
-    creates: ~/.config/rclone/rclone.conf
-    cmd: "rclone config create --non-interactive {{ backup_remote_name }} protondrive"
+  containers.podman.podman_secret:
+    name: proton_code
+    data: "{{ raw_proton_code }}"
+    state: present
+
+- name: Ensure sync container config
+  become: true
+  become_user: "{{ username }}"
+  containers.podman.podman_container:
+    name: "config"
+    image: rclone/rclone
+    state: quadlet
+    hostname: "{{ inventory_hostname }}"
+    secrets:
+      - "proton_passwd,type=env,target=RCLONE_PROTONDRIVE_PASSWORD"
+      - "proton_username,type=env,target=RCLONE_PROTONDRIVE_USERNAME"
+      - "proton_code,type=env,target=RCLONE_PROTONDRIVE_2FA"
+    volume:
+      - "~/.config/:/.config/:z"
+    entrypoint: "config create --non-interactive {{ backup_remote_name }} protondrive"
+    quadlet_options:
+      - |
+        [Install]
+        WantedBy=default.target
+        Type=oneshot
+        RemainAfterExit=yes
+        WantedBy=data_sync.service
 
 - name: Create the restic repo if it does not exist
   become: true
@@ -34,31 +54,39 @@
   containers.podman.podman_container:
     image: ghcr.io/restic/restic
     name: init_data
-    state: started
+    state: quadlet
     secrets:
       - "wasabi_media_repo,type=env,target=RESTIC_REPOSITORY"
       - "restic_passwd_media,type=env,target=RESTIC_PASSWORD"
       - "wasabi_access_key_id,type=env,target=AWS_ACCESS_KEY_ID"
       - "wasabi_access_key,type=env,target=AWS_SECRET_ACCESS_KEY"
     entrypoint: "init"
+    quadlet_options:
+      - |
+        [Install]
+        WantedBy=default.target
+        Type=oneshot
+        RemainAfterExit=yes
+        WantedBy=backup_data.service
+        WantedBy=forget_data.service
+        WantedBy=check_data.service
 
-- name: Ensure backup container
+- name: Ensure backup containers
   become: true
-  become_user: torrents
+  become_user: "{{ username }}"
   vars:
     configs:
       backup_data:
         entrypoint: "backup {{ data_dir }} -v"
-        quadlet_opt: "Before=post_backup_check_data"
-      post_backup_check_data:
+        quadlet_opt: Before=check_data
+      check_data:
         entrypoint: check
-        quadlet_opt: "After=backup_data"
+        quadlet_opt: |
+          After=backup_data
+          After=forget_data
       forget_data:
-        entrypoint: "forget --keep-daily 7 --keep-hourly 48 --prune"
-        quadlet_opt: "After=post_backup_check_data"
-      post_forget_check_data:
-        entrypoint: check
-        quadlet_opt: "After=forget_data"
+        entrypoint: forget --keep-daily 7 --keep-hourly 48 --prune
+        quadlet_opt: Before=check_data
   loop: "{{ lookup('ansible.builtin.dict', configs) }}"
   containers.podman.podman_container:
     name: "{{ item.key }}"
@@ -77,44 +105,30 @@
         [Install]
         WantedBy=default.target
         Type=oneshot
-        RemainAfterExit=yes
         {{ item.value.quadlet_opt }}
 
-- name: Generate timer for data sync
+- name: Ensure the sync service container
   become: true
-  become_user: root
-  ansible.builtin.copy:
-    dest: "~/.config/systemd/user/data_sync.timer"
-    group: "{{ username }}"
-    owner: "{{ username }}"
-    mode: '600'
-    content: |
-      [Timer]
-      OnCalendar=daily
-      Persistent=true
+  become_user: "{{ username }}"
+  containers.podman.podman_container:
+    name: data_sync
+    image: rclone/rclone
+    state: quadlet
+    # Note: copy never deletes files on target, sync does. bisync deletes on both. Experiment with them
+    entrypoint: "copy {{ data_dir }} {{ backup_remote_name }}:{{ backup_sync_container_name }} -v"
+    volume:
+      - "~/.config/:/.config/:z"
+    quadlet_options:
+      - |
+        [Service]
+        Type=oneshot
 
-      [Install]
-      WantedBy=timers.target
-
-- name: Generate service for data sync
+- name: Generate timers for data and backup sync
   become: true
-  become_user: root
+  become_user: "{{ username }}"
+  loop: data_sync backup_data
   ansible.builtin.copy:
-    dest: "~/.config/systemd/user/data_sync.service"
-    group: "{{ username }}"
-    owner: "{{ username }}"
-    mode: '600'
-    content: |
-      [Service]
-      Type=oneshot
-      RemainAfterExit=yes
-      ExecStart=rclone copy {{ data_dir }} {{ backup_remote_name }}:nas-data -v
-
-- name: Generate timer for data backup
-  become: true
-  become_user: root
-  ansible.builtin.copy:
-    dest: "~/.config/systemd/user/backup_data.timer"
+    dest: "~/.config/systemd/user/{{ item }}.timer"
     group: "{{ username }}"
     owner: "{{ username }}"
     mode: '600'
