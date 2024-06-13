@@ -1,4 +1,9 @@
 ---
+# Delete all users and try again
+# Does not touch system wide settings like opened firewall ports,
+# btrfs/filesys settings, and selinux perms. Just deletes the users
+# Hopefully I can
+
 - name: Delete container and user details from target node
   hosts: all
 
@@ -6,26 +11,27 @@
     - config.ansible.yml
 
   tasks:
+    - name: Delete the user accounts
+      loop: "{{ users }}"
+      loop_control:
+        loop_var: username
+      ansible.builtin.include_tasks:
+        file: tasks/userdel.ansible.yml
+
     # TODO: Get this list from config.ansible.yml or $username.ansible.yml instead of hardcoding
     - name: Remove opened firewall ports
       become: true
       become_user: root
       ansible.posix.firewalld:
-        service: "{{ item }}"
+        port: "{{ item }}"
         immediate: true
         permanent: true
         state: disabled
       loop:
-        - deluge-web
-        - deluge-daemon
-        - deluge-thin-client-gtk
-
-    - name: Remove data dir group
-      become: true
-      become_user: root
-      ansible.builtin.group:
-        name: data
-        state: absent
+        - 8112/tcp
+        - 6881/tcp
+        - 6881/udp
+        - 58846/tcp
 
     - name: Disallow container to use host devices (viz. gluetun)
       become: true
@@ -43,52 +49,11 @@
         state: false
         persistent: true
 
-    - name: Disable linger on user so I can kill them safely
-      become: true
-      become_user: root
-      loop:
-        - torrents
-      loop_control:
-        loop_var: username
-      register: disable_linger_result
-      failed_when:
-        - "'Failed to look up user' not in disable_linger_result.stderr"
-        - disable_linger_result.rc != 0
-      ansible.builtin.command:
-        cmd: "loginctl disable-linger {{ username }}"
-        removes: "/home/{{ username }}"
-
-    - name: Kill active user sessions
-      become: true
-      become_user: root
-      register: pkill_result
-      # 0 success, 1 means no processes matched
-      failed_when: "pkill_result.rc > 1"
-      loop:
-        - torrents
-      loop_control:
-        loop_var: username
-      ansible.builtin.command:
-        cmd: "pkill -U {{ username }}"
-        removes: "/home/{{ username }}"
-
-    - name: Remove all users
-      become: true
-      become_user: root
-      loop:
-        - torrents
-      loop_control:
-        loop_var: username
-      ansible.builtin.user:
-        name: "{{ username }}"
-        state: absent
-        remove: true
-
-    - name: "Reset selinux details on /data"
+    - name: "Reset selinux details on {{ data_dir }}"
       become: true
       become_user: root
       ansible.builtin.file:
-        path: /data
+        path: "{{ data_dir }}"
         setype: default_t
         recurse: true
         follow: false
