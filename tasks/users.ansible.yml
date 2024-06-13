@@ -3,6 +3,8 @@
 - name: "Create new user {{ username }}"
   become: true
   become_user: root
+  register: create_user_result
+  failed_when: "create_user_result.rc != 9"
   ansible.builtin.command:
     creates: "{{ data_dir }}/home/{{ username }}"
     cmd: "useradd {{ username }} --home-dir {{ data_dir }}/home/{{ username }} --add-subids-for-system --create-home --system --key UMASK=077"
@@ -16,6 +18,8 @@
 - name: "Create podman secrets for new user named {{ username }}"
   no_log: true
   loop: "{{ secrets }}"
+  become: true
+  become_user: "{{ username }}"
   containers.podman.podman_secret:
     name: "{{ item.key }}"
     data: "{{ lookup('bitwarden.secrets.lookup', item.value) }}"
