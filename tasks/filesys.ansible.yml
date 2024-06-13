@@ -8,7 +8,7 @@
   ansible.builtin.file:
     path: "{{ data_dir }}"
     group: data
-    mode: '770'
+    mode: "u=rwX,g=rwX,o-rwX"
     recurse: true
     setype: container_file_t
     # TODO: Do i want this to be true? Seems like way to shoot myself in the foot
