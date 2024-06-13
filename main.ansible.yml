@@ -30,6 +30,9 @@
         state: present
 
   tasks:
+    - name: Setup data volume
+      ansible.builtin.include_tasks: tasks/filesys.ansible.yml
+
     - name: Core logic to create all users and containers
       ansible.builtin.include_tasks: tasks/users.ansible.yml
       loop: "{{ users }}"
