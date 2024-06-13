@@ -18,7 +18,7 @@
   loop: "{{ secrets }}"
   containers.podman.podman_secret:
     name: "{{ item.key }}"
-    data: "{{ item.value }}"
+    data: "{{ lookup('bitwarden.secrets.lookup', item.value) }}"
     state: present
     # TODO: Move towards gpg encrypted driver?
     # driver:
