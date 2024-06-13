@@ -6,6 +6,7 @@
   become: true
   become_user: root
   ansible.builtin.file:
+    # TODO: Exclude data_dir/home to not touch dotfiles, etc?
     path: "{{ data_dir }}"
     group: data
     mode: "u=rwX,g=rwX,o-rwX"
